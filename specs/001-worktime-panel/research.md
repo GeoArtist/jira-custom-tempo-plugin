@@ -2,84 +2,78 @@
 
 **Feature**: [spec.md](spec.md) | **Plan**: [plan.md](plan.md) | **Date**: 2026-11-12
 
-Sources are official Atlassian documentation and the published Jira Cloud OpenAPI specification
-unless a line says otherwise. Each decision carries a status:
+**Revision 2026-11-12**: the requester decided to deliver the plugin as a standalone browser
+extension instead of an Atlassian Forge app. R1, R2, R4, R5, R7, R8, and R11 were rewritten
+for that decision; the Forge design is recorded under "Alternatives considered" in R1.
 
-- **Verified**: stated in a primary Atlassian source.
-- **Unverified**: inferred, or only reported by the community. Each unverified point has a check
-  in the "Spike" list at the end, which must run before feature work starts.
+Each decision carries a status:
 
-## R1. App platform and architecture
+- **Verified**: confirmed by an automated test in this repository, or stated in a primary
+  source.
+- **Unverified**: not yet confirmed on a real Jira Cloud site. Each unverified point is listed
+  under "Checks on a real Jira site" at the end.
 
-**Decision**: Atlassian Forge app with Custom UI, running entirely in the browser. No Forge
-functions, no resolver, no backend of any kind.
+## R1. Delivery form and architecture
+
+**Decision**: a browser extension (Manifest V3) with one content script. The script runs on
+Jira Cloud pages and draws the add-on on top of them. There is no background script, no popup
+page, no options page, no server, and no extension permission.
 
 **Rationale**:
 
-- Forge apps are hosted by Atlassian, which is what constitution Principle VI requires (no
-  server operated by the project or by the user).
-- `requestJira` from `@forge/bridge` calls the Jira REST API directly from Custom UI as the
-  current user, so no backend is needed to read worklogs. (Verified.)
-- A browser-only app uses none of the metered Forge capabilities (function time, KVS, logs), so
-  it stays inside the free allowance. (Unverified in wording: the pricing page lists what is
-  metered and says unlisted capabilities remain free; it does not name Custom UI hosting.)
-- Custom UI is plain HTML, script, and styles, so TypeScript and SCSS without a UI framework
-  are possible, as the constitution requires.
+- It is standalone: a person installs it in their own browser. No Jira administrator, no
+  Atlassian developer account, no app registration, and no deployment are involved.
+- It can draw a launcher on every Jira page, which is what the first mock-up shows and what
+  the Forge platform could not do.
+- A content script on a Jira page can read that site's REST API with the session the user
+  already has. The add-on needs no credentials and no permission of its own.
+- With no Forge bridge library the shipped script is about 12 kB gzipped instead of about
+  40 kB.
+
+**Verified** by `tests/e2e/extension.spec.ts`: the built extension is loaded into Chromium, a
+page on a Jira Cloud address is opened, and the launcher, the panel, and the session-based
+requests work.
 
 **Alternatives considered**:
 
-- *Forge UI Kit*: renders Atlassian's own components. Rejected: the spec's layout (gradient
-  progress bar, multi-line cells, colour-matched totals) cannot be built with it, and it rules
-  out SCSS.
-- *Atlassian Connect*: needs a server operated by the project. Rejected by Principle VI.
-- *Browser extension*: could draw a floating launcher on every page. Rejected: it is not a Jira
-  Cloud app, needs installation per browser per user, and breaks Principle VI.
+- *Atlassian Forge app with Custom UI* (the first implementation): hosted by Atlassian and
+  installed by a site admin. Replaced because it needs a developer account, registration, and
+  deployment, cannot show a launcher on every page, and its command-palette entry relied on a
+  Preview module.
+- *Jira Data Center add-on (.jar)*: works only on self-hosted Jira, not on Jira Cloud, and
+  needs a Java build.
+- *Separate web page*: needs the Jira address and an API token typed in, and a proxy server,
+  because browsers block direct calls to Jira from another site.
+- *Userscript*: the same idea as the extension, but it needs a userscript manager installed
+  first and has no store distribution.
 
-**Open point**: a manifest with no `function` module is not explicitly documented as
-deployable. Spike S1.
+## R2. Where the add-on appears (User Story 5, FR-040, FR-041, FR-049)
 
-## R2. Where the panel appears (User Story 5, FR-040, FR-041)
+**Decision**: on every page under `https://*.atlassian.net/*` except `/wiki/*` (Confluence),
+in the top frame only. The add-on draws a launcher fixed in the bottom-right corner and a panel
+fixed above it, exactly as in the mock-up. The panel has a close button; the launcher also
+toggles it.
 
-**Finding**: Jira Cloud has no extension point that draws a persistent floating element on
-every page. Apps can only render inside the places Jira offers. (Verified by the absence of
-such a module in the Jira module index.)
+**Rationale**: `*.atlassian.net` is where Jira Cloud sites live. The match pattern is declared
+in the manifest, so the browser shows the user which sites the extension can run on.
 
-**Decision** (confirmed by the requester in the spec's Clarifications, 2026-11-12):
+**Limits**:
 
-| Need | Extension point | Status |
-|------|-----------------|--------|
-| The panel as a page (User Stories 1 to 4, 6; FR-049) | `jira:globalPage`: an entry in the Apps menu that opens the panel as a full page | Verified, stable |
-| Today's total at a glance (FR-040) | `jira:dashboardGadget`: a compact gadget "Dziś: 10h 10m" in the progress colour, with a button that opens the panel page | Verified, stable |
-| The panel from any Jira page (FR-041) | `jira:command`: a command-palette entry with a keyboard shortcut that opens the panel resource as a pop-up (modal) | Verified, but the module is in Preview |
-
-The pop-up and the page run the same panel code. The pop-up adds a close button that calls the
-bridge's `view.close()`; the page has none.
-
-**Rationale**: the gadget and the page are generally available. The command module is the only
-supported way to reach the panel from every Jira page. It is labelled Preview, so it is kept
-isolated: it is one manifest entry that reuses the panel resource, and removing it leaves the
-page and the gadget fully working.
-
-Known limits of `jira:command`: Jira loads app shortcuts only after the user has opened the
-command palette once; Preview modules can change with shorter notice.
-
-**Alternatives considered**:
-
-- *`jira:globalBackgroundScript`*: runs invisibly on Jira pages and can open a modal, but has
-  no visible UI of its own, is in Preview, and its support for Custom UI is unclear. Rejected.
-- *`jira:issueContext` / `jira:issueGlance`*: visible only on an issue. Rejected as the main
-  entry point.
-
-**Mobile**: the Jira iOS and Android apps show only issue-level app modules, so the panel page
-is not available there. In a mobile browser the page is expected to work (Unverified, spike
-S6). The layout is responsive regardless (Principle III).
+- A Jira Cloud site served from a custom domain is not matched. Adding such a domain means
+  adding it to the manifest.
+- Other Atlassian products on the same address without Jira (for example a site with only
+  Confluence) answer the profile request differently or not at all; the add-on then draws
+  nothing (see R4).
+- Mobile browsers mostly do not support extensions. The layout is responsive and tested at
+  320 px, which covers narrow desktop windows and the mobile browsers that do support
+  extensions.
 
 ## R3. Reading the current user's worklogs
 
 **Decision**: two-step read, then filter in the client. Full request and response details are
 in [contracts/jira-rest.md](contracts/jira-rest.md).
 
-1. `POST /rest/api/3/search/jql` with
+1. `GET /rest/api/3/search/jql` with
    `worklogAuthor = currentUser() AND worklogDate >= A−1 AND worklogDate <= B+1`, fields
    `summary`, to get candidate issues.
 2. `GET /rest/api/3/issue/{id}/worklog?startedAfter=&startedBefore=` for each candidate, at
@@ -95,6 +89,8 @@ in [contracts/jira-rest.md](contracts/jira-rest.md).
   worklog by the user and any worklog in the range) and the time zone of `worklogDate` is not
   documented for Cloud. Padding the range by one day and filtering in the client makes the
   result independent of both.
+- The search uses `GET`, not `POST`. Every request of the add-on is then a read, which matches
+  FR-050 literally and needs no cross-site-request token.
 - The old `/rest/api/3/search` is being removed; `/search/jql` with `nextPageToken` is the
   current endpoint. (Verified.)
 
@@ -108,53 +104,49 @@ in [contracts/jira-rest.md](contracts/jira-rest.md).
 **Risks**:
 
 - `worklogAuthor` works but is missing from the current JQL field reference. Mitigation: the
-  fallback query without it, described in the contract. Spike S2.
+  fallback query without it, described in the contract.
 - JQL indexes only the 1,000 most recent worklogs per issue. Accepted as a known limitation.
-- Rate limits (Verified): 65,000 points per hour per app across all sites, plus per-endpoint
-  burst limits. A day view costs 4 to 10 requests; a full month about 62. Mitigations: 5
-  concurrent requests at most, `Retry-After` handling, and no auto-refresh while the browser
-  tab is hidden.
+- Rate limits: the requests count as the user's own browser traffic. Mitigations: 5
+  concurrent requests at most, `Retry-After` handling, and no requests while the browser tab
+  is hidden.
+- A very long JQL would make a long `GET` address. The query has a fixed, short shape, so this
+  does not arise.
 
-## R4. Identity, time zone, site URL
+## R4. Identity, time zone, site address
 
-**Decision**: read `accountId`, `timezone`, and `siteUrl` from `view.getContext()` of
-`@forge/bridge`. Do not call `/rest/api/3/myself`.
+**Decision**: one `GET /rest/api/3/myself` when the page loads gives `accountId` and
+`timeZone`. The site address is the page's own origin. If the request does not return a
+signed-in user, the add-on draws nothing and sends nothing else.
 
-**Rationale**: the context already carries the three values (Verified field names). Dropping
-`/myself` removes one request per start and removes the `read:jira-user` scope, leaving
-`read:jira-work` as the app's only scope (constitution: smallest permission set).
+**Rationale**: the profile time zone is what Jira itself uses to show worklog times, so the
+panel agrees with Jira. The check also keeps the add-on silent on login pages and on pages
+that are not Jira.
 
-Day boundaries, weekdays, and clock times are computed for `timezone` with the browser's
+Day boundaries, weekdays, and clock times are computed for that zone with the browser's
 built-in `Intl.DateTimeFormat`. No date library is added.
-
-**Alternative considered**: the browser's own time zone. Rejected: Jira shows worklog times in
-the profile time zone, and the panel must agree with Jira.
 
 ## R5. Storing the two user settings
 
-**Decision**: the browser's `localStorage` inside the Custom UI frame, under one key. Details
-in [contracts/settings-storage.md](contracts/settings-storage.md).
+**Decision**: the `localStorage` of the Jira site, under one namespaced key. Details in
+[contracts/settings-storage.md](contracts/settings-storage.md).
 
 **Rationale**:
 
-- It needs no scope and no backend, so the app stays strictly read-only towards Jira.
-- It is synchronous, so the saved theme is applied before the first paint (FR-047).
-- The two values are small preferences; losing them falls back to working defaults.
+- It needs no extension permission (extension storage would need the `storage` permission).
+- It is synchronous, so the saved theme is applied before anything is drawn (FR-047).
+- It satisfies the constitution: settings stay in the user's browser, never on a server.
 
 **Trade-off, accepted by the requester (spec Clarifications; FR-033, FR-047, FR-050)**:
-settings are remembered per browser, not per user account. A user on a second device sets them
-once more there.
+settings are per browser. With this storage they are also per Jira site: a user who works on
+two Jira sites sets them once on each.
 
 **Alternatives considered**:
 
 | Option | Why rejected |
 |--------|--------------|
-| Jira user properties (`/rest/api/3/user/properties/{key}`) | Persists across devices, but writing needs the `write:jira-work` scope: a read-only time viewer would ask admins for permission to modify work items. |
-| Forge key-value storage | Needs a backend function, a resolver, the `storage:app` scope, and metered usage, for two values. Conflicts with Principles II and VI. |
-
-**Open point**: the stability of the frame's origin across deployments is not documented. If
-it changes, settings reset to defaults. Spike S4. If it proves unstable, the fallback is Jira
-user properties with the granular scope `write:user.property:jira`.
+| Extension storage (`chrome.storage.local`) | One set for all Jira sites, but it needs the `storage` permission, is asynchronous, and ties the code to the extension API. |
+| Extension storage with sync | Would follow the user across devices through their browser account; forbidden by the constitution (settings per browser only). |
+| Jira user properties | Would need the add-on to write to Jira; forbidden by FR-050 and the constitution. |
 
 ## R6. Language, build, and dependencies
 
@@ -164,107 +156,148 @@ user properties with the granular scope `write:user.property:jira`.
 |---------|--------|
 | Language | TypeScript, `strict` mode; styles in SCSS (constitution) |
 | UI framework | none: small DOM-building functions |
-| Runtime dependency | `@forge/bridge` only |
-| Bundler | `esbuild` |
-| Styles compiler | `sass` (Dart Sass) |
-| Unit and UI tests | `vitest` with `happy-dom` |
-| Responsive and theme tests | `@playwright/test`, Chromium only |
-| Deploy tooling | `@forge/cli` |
+| Runtime dependencies | none |
+| Toolchain (mandatory) | Vite+: the `vp` command, package `vite-plus` |
+| Install, dev server, build | `vp install`, `vp dev`, `vp build` |
+| Unit and UI tests | `vp test` (Vitest inside Vite+) with `happy-dom` |
+| Lint, format, type check | `vp check` |
+| Styles compiler | `sass` (Dart Sass), used by Vite+ |
+| Browser tests | `@playwright/test`, Chromium only |
 
-All except `@forge/bridge` are development-only and never reach the shipped files.
+Everything is development-only. The shipped extension contains only the project's own
+compiled code.
 
-**Dependency justification for `@forge/bridge`** (Principle II):
+**Vite+ is mandatory** (constitution, Technical Constraints; decided by the requester on
+2026-11-12). Consequences for this project:
 
-- *What it replaces*: nothing can replace it. It is the only supported channel from a Custom UI
-  frame to Jira (`requestJira`, `view.getContext`, `router`).
-- *Size cost*: about 14.6 kB gzipped when bundled whole, less after tree-shaking to the three
-  functions used. That is under 15% of the 100 kB budget.
-- *Why platform APIs are insufficient*: the frame is sandboxed on its own origin and cannot
-  call the Jira REST API with `fetch`.
+- One configuration file, `vite.config.ts`, holds the build, dev server, test, lint, and
+  format settings.
+- `vp build` produces the extension in `dist/extension/`: one classic script, `content.js`
+  (library build in IIFE format, because a content script cannot be a module), plus
+  `manifest.json` and the icons copied from `extension/`.
+- `vp build --mode demo` and `vp dev --mode demo` build and serve a stand-in Jira page
+  (`demo/index.html`) that loads the same content script with a faked Jira session. The
+  browser tests and local preview use it.
+- Every script in `package.json` calls `vp`; `vp run check` is the full gate.
+- No second tool for a job Vite+ covers: no other bundler or build script, test runner,
+  linter, or formatter. Playwright stays because Vite+ does not do browser tests.
 
-**Rationale for the tools**: `esbuild` and `sass` are each a single-purpose tool with almost no
-transitive dependencies. A framework-style toolchain was rejected as heavier with no benefit
-for two small pages.
+**Rationale**: one toolchain means one configuration file, one set of commands, and one
+version to keep current. With no runtime dependency there is nothing in the shipped file that
+the project did not write.
 
-**Alternatives considered**: Vite (more dependencies, same output); React or Preact (runtime
-size and a dependency the UI does not need); Jest (slower, needs extra TypeScript setup).
+**Alternatives considered**:
 
-## R7. Content security policy and dynamic colours
+- *A hand-written `esbuild` build script plus stand-alone `vitest`*: the original design.
+  Replaced by Vite+ on the requester's decision.
+- *An extension framework (WXT, Plasmo, CRXJS)*: adds a second build layer for one content
+  script and a manifest; not needed and against the single-toolchain rule.
+- *React or Preact*: runtime size and a dependency the UI does not need.
 
-**Finding**: Custom UI blocks inline styles and inline scripts by default. Allowing inline
-styles needs `permissions.content.styles: unsafe-inline`. (Verified.)
+## R7. Styles on a page the add-on does not own
 
-**Decision**: do not request `unsafe-inline`. All styles ship as one compiled stylesheet file
-per page. Values computed at run time (bar fill width, progress colour) are set through the
-element's style object in script (`element.style.setProperty('--wt-…', value)`), and the
-stylesheet reads them as custom properties. Icons are inline SVG markup built in script.
+**Decision**: the add-on draws inside a shadow root attached to one host element. Its compiled
+stylesheet is imported into the script as text and attached as a constructed stylesheet
+(`adoptedStyleSheets`). Values computed at run time (bar fill, progress colour) are set through
+each element's style object as custom properties.
 
-**Rationale**: style changes made through the style object are not "inline styles" in the
-sense of the policy, so no permission is needed. This keeps the permission list minimal.
-(Unverified inside Forge specifically; standard browser behaviour. Spike S3.)
+**Rationale**:
 
-## R8. Layout inside the Jira frame
+- The shadow root keeps Jira's styles out of the add-on and the add-on's styles out of Jira.
+  (Verified by a browser test that adds a hostile page rule.)
+- A constructed stylesheet is not an inline `<style>` element, so a strict content security
+  policy on the page does not block it. (Verified in `tests/e2e/extension.spec.ts` against a
+  page with `style-src 'self'`.) If a browser refuses constructed stylesheets in a content
+  script, the code falls back to a `<style>` element in the shadow root.
+- No separate CSS file means no `web_accessible_resources` entry in the manifest.
+- Sizes are in px: `rem` would follow the Jira page's root font size.
 
-**Finding**: Custom UI frames size themselves to their content; `100vh` and `position: fixed`
-are reported to misbehave on global pages. (Unverified, community reports.)
+## R8. Layout on top of a Jira page
 
-**Decision**: the panel is a centred card with a maximum width; the page grows with content.
-The table body has a bounded height and scrolls inside itself, so the totals below it stay in
-view (spec edge case "large period"). The settings popover is positioned inside the card, not
-fixed to the viewport. Spike S5 confirms the behaviour.
+**Decision**: the launcher and the panel are `position: fixed` in the bottom-right corner, on
+a very high stacking layer. The panel has one fixed height, `max(50svh, 640px)` (spec
+Amendment 6, FR-059), and is never taller than the window: on screens 600 px and
+wider the table rows scroll inside it while the header, the period controls, and the total row
+stay in view; below 600 px the whole panel scrolls.
+
+Changed by Amendment 8: the launcher is still `position: fixed`, but the user can drag it, and
+the panel is placed against it with CSS anchor positioning (`anchor-name` on the launcher,
+`position-anchor` and `anchor()` insets on the panel). The browser keeps the panel next to the
+launcher; script stores the launcher's two offsets and decides the side (above or below,
+which edge in line), because that decision has to be repeated on every move and window
+resize. Alternatives considered: `position-try-fallbacks`, rejected because the browser keeps
+the last side that fitted while it still fits, which left the panel away from the launcher
+after the window was resized; computing the whole place in script, rejected as more code. Anchor positioning is in Chrome and
+Edge from version 125; an older browser gets the panel above the launcher from the two
+offsets.
+
+**Rationale**: the add-on now draws in the Jira window itself, not inside a platform frame, so
+fixed positioning is reliable. This satisfies the spec's edge case "header, period controls,
+and totals stay reachable" as written; the earlier plan delta D4 is gone.
+
+Jira has single-key keyboard shortcuts (for example `c` creates a work item). Key events from
+inside the add-on are stopped at its root element, so typing a number or a date in the add-on
+does not trigger them. (Verified by a browser test on the stand-in page; unverified against
+Jira's own shortcut handling, see the checks below.)
 
 ## R9. Theme
 
-**Decision**: the plugin owns its two themes. A `data-theme` attribute on the root element
-selects one set of design-token values; both sets live in one SCSS token file. The Jira theme
-is not read and `view.theme.enable()` is not called.
+**Decision**: the add-on owns its two themes. A `data-theme` attribute on the add-on's root
+element selects one set of design-token values. The Jira page's theme is not read and not
+changed.
 
-**Rationale**: this is exactly constitution Principle IV (user switch, default dark, no
-automatic following) and spec User Story 6.
+**Rationale**: this is constitution Principle IV (user switch, default dark, no automatic
+following) and spec User Story 6.
 
 ## R10. Tests without a live Jira
 
 **Decision**: the code talks to Jira through one small interface (`JiraGateway`: `request`,
-`getContext`, `navigate`). Production wires it to `@forge/bridge`; tests wire it to a fake fed
+`getSession`). Production wires it to the page's Jira session; tests wire it to a fake fed
 from recorded JSON fixtures.
 
-- Unit tests (vitest): period arithmetic, time-zone day boundaries, grouping and sums, colour
-  rule, formatting, settings validation, pagination, 429 handling, the fallback query.
-- UI tests (vitest + happy-dom): each view state, Polish labels, table structure, settings.
-- Browser tests (Playwright): the built pages with the fake gateway at 360 px and 1280 px, in
-  dark and light themes: no horizontal overflow, long titles wrap, touch target size.
+- Unit tests (`vp test`): period arithmetic, time-zone day boundaries, grouping and sums,
+  colour rule, formatting, settings validation, pagination, 429 handling, the fallback query,
+  the session gateway.
+- UI tests (`vp test` with happy-dom): the whole add-on (launcher, panel, periods, refresh,
+  settings), and each component.
+- Browser tests (Playwright) on the stand-in Jira page built with `vp build --mode demo`, at
+  320 px, 1280 px, and 1920 px, in dark and light themes: layout, colours and contrast,
+  keyboard use, style and key isolation, a large month.
+- Browser tests of the real extension: `dist/extension` is loaded into Chromium and a page on
+  a Jira Cloud address is opened, with the network answered by the test.
 
-**Rationale**: Principle V forbids tests that need a live Jira. No official Atlassian guide for
-mocking the bridge exists, so an interface owned by this project is the stable seam.
+**Rationale**: Principle V forbids tests that need a live Jira. The last group still proves
+the manifest, the injection, and the session requests in a real browser.
 
 ## R11. Delivery and installation
 
-**Decision**: `forge deploy -e production`, then a sharing installation link from the Atlassian
-developer console. A Jira site admin opens the link and installs. (Verified.)
+**Decision**: `vp run package` builds `dist/extension/` and packs it into
+`dist/jira-custom-tempo-<version>.zip`.
 
-**Rationale**: this is the standard Jira Cloud installation path for apps that are not on the
-Marketplace, and it needs no step after installation (Principle VI, FR-042).
+| Way to install | Who | Steps after installing |
+|----------------|-----|------------------------|
+| Browser store (Chrome Web Store, Edge Add-ons): upload the zip once, then users click "Add" | anyone | none |
+| Company policy (managed browsers) | IT | none for users |
+| "Load unpacked" from `dist/extension/` with developer mode on | developers and testers | none |
 
-**Open points**:
+**Rationale**: these are the installation paths browsers offer. After installing, the add-on
+works on the next Jira page load with no configuration (Principle VI, FR-042).
 
-- Whether each user sees a one-time "Allow access" prompt on first use is not confirmed. Spike
-  S7. It is imposed by the platform and cannot be removed by the app.
-- The Forge CLI needs Node.js 22.23.4 or later (or 24.22.1 or later). The development machine
-  has 22.23.2, which is below that. Upgrade before the first `forge` command.
+**Limit to know**: Chrome and Edge do not let ordinary users install an extension from a file
+outside the store, except through developer mode or company policy. Publishing to a store
+needs a store developer account and a review by the store.
 
-## Spike: checks to run before feature work
+## Checks on a real Jira site
 
-Each check runs on a real Jira Cloud development site with a minimal deployed app. A failed
-check triggers the listed fallback.
+The automated tests cover the extension end to end against a faked Jira. These points can
+only be confirmed on a real Jira Cloud site, by loading `dist/extension/` unpacked and opening
+Jira while signed in:
 
-| ID | Check | Fallback if it fails |
-|----|-------|----------------------|
-| S1 | A manifest with `jira:globalPage`, a resource, the scope `read:jira-work`, and no functions passes `forge lint` and deploys | Add an empty resolver function |
-| S2 | `worklogAuthor = currentUser() AND worklogDate >= …` succeeds on `/search/jql` and returns the expected issues | Use the query without `worklogAuthor` permanently |
-| S3 | Setting custom properties through the style object works without `unsafe-inline` | Add `permissions.content.styles: unsafe-inline` and record it in the plan |
-| S4 | A value in `localStorage` survives a redeploy and a new browser session | Store settings in Jira user properties (R5) |
-| S5 | The global page frame grows with content; inner scrolling of the table works on desktop and phone widths | Let the whole page scroll, without inner scrolling |
-| S6 | The global page opens and is usable in a mobile browser | Document "desktop and tablet browsers" as supported; keep the responsive layout |
-| S7 | First use by a second, non-developer account: is there a consent prompt? | Document the one-time prompt in the installation notes |
-| S8 | The gadget can open the panel page with `router.navigate` using values from the context | Show the page address as a plain link |
-| S9 | A `jira:command` entry opens the panel resource (Custom UI) as a modal, `view.close()` closes it, and the shortcut works once the palette has been opened | Ship without the command entry; page and gadget remain; report to the requester |
+| ID | Check | If it fails |
+|----|-------|-------------|
+| X1 | The launcher appears on Jira pages and shows today's total | Compare the real answers of the three endpoints with [contracts/jira-rest.md](contracts/jira-rest.md) |
+| X2 | `worklogAuthor = currentUser() AND worklogDate >= …` succeeds on `/search/jql` | The built-in fallback query takes over; confirm it does |
+| X3 | Jira's real content security policy does not block the add-on's styles | The `<style>` fallback applies; if that is blocked too, ship the stylesheet as an extension file |
+| X4 | Typing in the add-on's fields does not trigger Jira shortcuts | Stop the key events earlier (capture phase) |
+| X5 | The launcher does not cover a Jira control the user needs in the bottom-right corner | The user drags the launcher elsewhere (FR-072) |
+| X6 | The add-on survives Jira's in-page navigation between views | Re-attach the host element when it is removed |

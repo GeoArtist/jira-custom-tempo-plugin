@@ -1,38 +1,46 @@
 <!--
 SYNC IMPACT REPORT (temporary review material; remove before commit)
 
-Version change: 2.0.0 → 2.1.0
-Bump rationale: MINOR. One rule is reworded and one constraint is added: settings are
-remembered per browser, not per account. No principle is removed or reversed. A per-browser
-design was arguably already allowed by 2.0.0's wording "for that user"; 2.1.0 makes it the
-only allowed design, which is new guidance, hence MINOR and not PATCH.
-Previous change: 1.1.0 → 2.0.0 (Jira Cloud target; theme chosen by a user switch, default dark).
+Version change: 2.2.0 → 3.0.0
+Bump rationale: MAJOR. The delivery form is redefined: the plugin is a standalone browser
+extension, no longer a Jira Cloud app hosted by Atlassian (Forge). Principle VI and two
+technical constraints change in a way the previous design does not satisfy.
+Previous change: 2.1.0 → 2.2.0 (Vite+ is the mandatory toolchain).
 
 Modified principles:
-- IV. Modern, Consistent User Interface: the theme is "remembered between sessions in the
-  browser where it was chosen" (was: "remembered for that user between sessions"). Title
+- I. Minimal Footprint: rationale reworded (the plugin is added to every Jira page). Budget
   unchanged.
+- VI. Install-Only Setup: installed as a browser extension through the browser's own
+  installation; runs entirely in the user's browser; no server, no hosted app platform, no
+  credentials of its own.
 
 Modified sections:
-- Technical Constraints: new rule. User settings are stored in the user's browser, one set per
-  browser; never per account, in Jira, or on a server; a browser with no stored settings
-  starts with the defaults.
+- Technical Constraints: the delivery form is a browser extension for Jira Cloud sites; it
+  reads Jira only through the documented REST API with the user's existing session, read-only;
+  it requests the smallest set of browser permissions; it must not alter the Jira page beyond
+  its own isolated element; the Forge CLI is no longer named as a tool.
+- Development Workflow and Quality Gates: gate 5 is now "installed into a clean browser
+  profile".
 
 Added sections: none
 Removed sections: none
 
-Consistency with existing artifacts:
-- specs/001-worktime-panel/spec.md (FR-033, FR-047, FR-050, Clarifications 2026-11-12): now
-  consistent. This resolves finding C1 of the 2026-11-12 analysis.
-- specs/001-worktime-panel/plan.md, research.md (R5), contracts/settings-storage.md, tasks.md
-  (T040, T052): consistent; no change needed.
-- specs/001-worktime-panel/spec.md Assumptions still contain the note "Conflict to resolve
-  before planning" about Principle IV. It has been obsolete since 2.0.0 and can be removed.
-- research.md R5 names Jira user properties as the fallback if browser storage proves unstable
-  (spike check S4). Under 2.1.0 that fallback would need a constitution amendment first.
+Consistency with existing artifacts (all updated on 2026-11-12):
+- specs/001-worktime-panel/spec.md: Clarifications, User Story 5, FR-040 to FR-042, FR-049,
+  FR-050, Assumptions.
+- specs/001-worktime-panel/plan.md, research.md, quickstart.md, data-model.md, contracts/*:
+  rewritten or updated for the extension.
+- specs/001-worktime-panel/tasks.md: new Phase 10 records the conversion; Forge-only tasks are
+  marked superseded.
+- The repository complies: `extension/manifest.json` declares no permission; the content
+  script sends only same-origin GET requests; no runtime dependency.
+
+Not changed on purpose:
+- .specify/templates/*: generic Spec Kit templates; they read this constitution at run time.
 
 Values chosen by the author of earlier drafts, still unconfirmed (confirm or amend):
-- Size budget of 100 KB gzipped for first-render compiled output (Principle I)
+- Size budget of 100 KB gzipped for first-render compiled output (Principle I). The extension
+  is 12 kB; the budget could be lowered.
 - Viewport range 320 px to 1920 px and 44 px touch targets (Principle III)
 - WCAG 2.1 AA contrast and keyboard operability (Principle IV)
 
@@ -54,8 +62,8 @@ The plugin MUST stay small enough to load fast inside Jira on a mobile connectio
 - Code, assets, and fonts that no shipped feature uses MUST NOT be included in the artifact.
 - Images and icons MUST be vector (SVG) or compressed raster; no unoptimized media.
 
-Rationale: the plugin runs inside a host page that is already heavy. Every added kilobyte
-slows each Jira page that embeds the plugin, for every user.
+Rationale: the plugin is added to every Jira page the user opens, and those pages are
+already heavy. Every added kilobyte is paid on each page load.
 
 ### II. Minimal Dependencies
 
@@ -126,52 +134,75 @@ diagnose remotely; tests are the only reliable guard.
 
 Installing the plugin MUST be the only action a user performs to make it work.
 
-- The plugin MUST be delivered as one self-contained Jira Cloud app, installed through the
-  standard Jira Cloud app installation mechanism.
+- The plugin MUST be delivered as one self-contained browser extension, installed through
+  the browser's own extension installation (a browser store, a company policy, or loading the
+  unpacked folder).
 - After installation the plugin MUST be functional with default settings. Manual
   configuration, file edits, database setup, separate service deployment, and command-line
   steps MUST NOT be required.
-- The plugin MUST run entirely on Jira Cloud and on the infrastructure Atlassian hosts for
-  Jira Cloud apps. It MUST NOT depend on any server or service operated by the project or by
-  the user.
+- The plugin MUST run entirely in the user's browser. It MUST NOT depend on any server,
+  hosted app platform, or service operated by the project, by the user, or by a third party;
+  the only system it talks to is the Jira site the user has open.
+- The plugin MUST NOT ask the user for a password, a token, or a Jira address. It works with
+  the Jira session the user already has in the browser.
 - Any required initialization or data migration MUST run automatically on install and on
   upgrade.
 - Optional settings MAY exist, but every one MUST have a working default.
 
 Rationale: each extra setup step is a point where an installation is abandoned or
-misconfigured; the artifact has to carry everything it needs.
+misconfigured; the artifact has to carry everything it needs. Installing must not require a
+Jira administrator or a developer account.
 
 ## Technical Constraints
 
-- The target platform is Jira Cloud. The plugin MUST be built, packaged, and installed as a
-  Jira Cloud app. Jira Data Center and Jira Server are out of scope and MUST NOT shape design
-  decisions.
+- The plugin is a standalone browser extension for Jira Cloud sites. It MUST be built and
+  packaged as a standard web extension. Jira Data Center and Jira Server are out of scope and
+  MUST NOT shape design decisions. It MUST NOT be built as an app hosted on a Jira app
+  platform.
 - All front-end application code MUST be written in TypeScript. Hand-written JavaScript source
   files MUST NOT be added; JavaScript exists only as compiler output.
 - All styles MUST be written in SCSS. Hand-written CSS source files MUST NOT be added; CSS
   exists only as compiler output.
 - The TypeScript and SCSS compilers are development-only dependencies and MUST NOT add
   runtime code to the shipped artifact beyond the compiled output (Principles I and II).
-- The plugin MUST use only officially documented Jira extension points and APIs.
-- The plugin MUST request the smallest set of Jira permissions that its features need.
+- Vite+ (the `vp` command, package `vite-plus`) is the mandatory development toolchain. It
+  MUST be used for installing dependencies, the development server, the production build,
+  unit and UI tests, linting, formatting, and type checks. Its configuration lives in one
+  file, `vite.config.ts`.
+- A second tool for a job that Vite+ covers MUST NOT be added: no separate bundler or build
+  script, test runner, linter, or formatter. Tools for jobs that Vite+ does not cover (for
+  example browser tests) MAY be used and fall under Principle II.
+- Every project task MUST be runnable through `vp` (`vp run <task>` or a built-in `vp`
+  command), and documentation MUST show the `vp` form.
+- The plugin MUST read Jira only through the officially documented Jira Cloud REST API. It
+  MUST NOT read data out of the Jira page's own markup or internal scripts.
+- The plugin MUST be read-only towards Jira: it MUST NOT send any request that creates,
+  changes, or deletes Jira data.
+- On the Jira page the plugin MUST keep to one element of its own, isolated from the page's
+  styles and scripts, and MUST NOT change anything else on the page.
+- The plugin MUST request the smallest set of browser permissions that its features need,
+  and MUST declare only the Jira Cloud addresses it runs on.
 - User settings (theme and every other preference) MUST be stored in the user's browser, one
   set per browser. They MUST NOT be stored per account, in Jira, or on any server. A browser
   with no stored settings MUST start with the defaults.
 - User and Jira data MUST NOT be sent to any third party.
-- The build MUST be reproducible from a clean checkout with one documented command and MUST
-  produce the installable artifact directly.
+- The build MUST be reproducible from a clean checkout with one documented command,
+  `vp run build`, and MUST produce the installable artifact directly.
 
 ## Development Workflow and Quality Gates
 
-Every change MUST pass these gates before merge:
+Every change MUST pass these gates before merge. Gates 1, 2, 4, and 6 run together with one
+command, `vp run check`:
 
 1. Tests: full suite passes (Principle V).
 2. Size: artifact size check passes (Principle I).
 3. Dependencies: any new dependency carries its written justification (Principle II).
 4. Interface: changed screens verified at a mobile and a desktop viewport, in light and dark
    themes (Principles III and IV).
-5. Install: before each release, the app is installed on a clean Jira Cloud site and
-   confirmed working with no further steps (Principle VI).
+5. Install: before each release, the extension is installed into a clean browser profile,
+   a Jira Cloud site is opened while signed in, and the plugin is confirmed working with no
+   further steps (Principle VI).
+6. Code health: formatting, lint, and type checks pass (`vp check`).
 
 Each feature plan MUST include a Constitution Check that states how the feature satisfies each
 principle. A deviation MUST be recorded in the plan with its justification and the simpler
@@ -191,4 +222,4 @@ This constitution supersedes other project practices and conventions where they 
 - Numeric budgets in this document (size, viewport range, touch target size) are changed
   only through the amendment procedure.
 
-**Version**: 2.1.0 | **Ratified**: 2026-11-12 | **Last Amended**: 2026-11-12
+**Version**: 3.0.0 | **Ratified**: 2026-11-12 | **Last Amended**: 2026-11-12

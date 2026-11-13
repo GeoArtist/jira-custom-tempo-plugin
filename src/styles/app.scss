@@ -1,0 +1,1217 @@
+// Everything the add-on draws on a Jira page: the launcher and the panel.
+@use 'tokens';
+@use 'base';
+
+$narrow: 600px; // below this the table stacks and controls take the touch size
+
+// The panel hangs on the launcher (FR-072): its bottom-right corner stands just above the
+// launcher's top-right corner, wherever the user has dragged the launcher. Without anchor
+// positioning the same place is worked out from the launcher's two offsets.
+.wt-panel {
+  position: fixed;
+  right: var(--wt-launcher-right);
+  bottom: calc(var(--wt-launcher-bottom) + var(--wt-touch) + var(--wt-panel-gap));
+  z-index: var(--wt-layer);
+  display: flex;
+  flex-direction: column;
+  // The room between the launcher and the window's top edge, and its bottom edge. The panel
+  // stands on the side where it fits, so it may be as tall as the larger of the two.
+  --wt-room-above: calc(100svh - var(--wt-launcher-bottom) - var(--wt-touch) - var(--wt-panel-gap) - var(--wt-edge));
+  --wt-room-below: calc(var(--wt-launcher-bottom) - var(--wt-panel-gap) - var(--wt-edge));
+
+  // The size is chosen by the user (FR-059, FR-071): never smaller than what the table needs.
+  // The window has the last word (FR-075): the panel and the launcher always fit into it
+  // together, so a panel too tall for either side of the launcher gets lower by itself. The
+  // rows scroll inside, the header and the total stay.
+  width: min(max(var(--wt-panel-width), var(--wt-panel-min-width)), calc(100vw - 2 * var(--wt-edge)));
+  height: min(max(var(--wt-panel-height), var(--wt-panel-min-height)), max(var(--wt-room-above), var(--wt-room-below)));
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-lg);
+  background: var(--wt-surface);
+  box-shadow: var(--wt-shadow);
+  // The chart takes its height from the panel's.
+  container-type: size;
+  // A panel that the window made lower than its content scrolls as a whole.
+  overflow: hidden auto;
+
+  > * {
+    flex: none;
+  }
+
+  // Script names the side of the launcher the panel stands on, afresh whenever the launcher
+  // or the window changes (FR-075): below it when there is no room above, lined up with its
+  // left edge when there is no room to the left, and held inside a window too narrow for
+  // either.
+  &[data-place-block='below'] {
+    top: calc(100svh - var(--wt-launcher-bottom) + var(--wt-panel-gap));
+    bottom: auto;
+  }
+
+  &[data-place-inline='pinned'] {
+    right: var(--wt-edge);
+  }
+
+  // The place itself comes from the launcher's box, through anchor positioning.
+  @supports (anchor-name: --wt-launcher) {
+    position-anchor: --wt-launcher;
+    right: anchor(right);
+    bottom: calc(anchor(top) + var(--wt-panel-gap));
+
+    &[data-place-block='below'] {
+      top: calc(anchor(bottom) + var(--wt-panel-gap));
+      bottom: auto;
+    }
+
+    &[data-place-inline='start'] {
+      right: auto;
+      left: anchor(left);
+    }
+
+    &[data-place-inline='pinned'] {
+      right: var(--wt-edge);
+    }
+  }
+
+  @media (max-width: $narrow) {
+    --wt-edge: 8px;
+  }
+}
+
+// The grips on the panel's free edges, the ones away from the launcher: drag them, or use
+// the arrow keys, to change the height, the width, or both at the corner. Script names the
+// free edges on the panel.
+.wt-resize {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  touch-action: none;
+
+  &:focus-visible {
+    outline-offset: -2px;
+  }
+}
+
+.wt-resize--block {
+  top: 0;
+  right: 0;
+  left: 0;
+  justify-content: center;
+  height: var(--wt-space-3);
+  cursor: ns-resize;
+}
+
+.wt-resize--inline {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.wt-resize--corner {
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: var(--wt-space-4);
+  height: var(--wt-space-4);
+  cursor: nwse-resize;
+}
+
+.wt-panel[data-free-block='bottom'] {
+  .wt-resize--block,
+  .wt-resize--corner {
+    top: auto;
+    bottom: 0;
+  }
+
+  .wt-resize--block {
+    align-items: flex-end;
+  }
+}
+
+.wt-panel[data-free-inline='right'] {
+  .wt-resize--inline,
+  .wt-resize--corner {
+    right: 0;
+    left: auto;
+  }
+}
+
+.wt-panel[data-free-block='bottom'][data-free-inline='left'] .wt-resize--corner,
+.wt-panel[data-free-block='top'][data-free-inline='right'] .wt-resize--corner {
+  cursor: nesw-resize;
+}
+
+// Only the height grip is drawn; the side and the corner answer with the cursor.
+.wt-resize__grip {
+  display: none;
+}
+
+.wt-resize--block .wt-resize__grip {
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin-block: var(--wt-space-1);
+  border-radius: var(--wt-radius-pill);
+  background: var(--wt-border);
+}
+
+.wt-resize:hover .wt-resize__grip,
+.wt-resize--active .wt-resize__grip {
+  background: var(--wt-accent);
+}
+
+.wt-resize--inline:hover,
+.wt-resize--inline.wt-resize--active {
+  background: color-mix(in srgb, var(--wt-accent) 60%, transparent);
+}
+
+@media (max-width: $narrow) {
+  // A phone gives the panel the whole width anyway.
+  .wt-resize--inline,
+  .wt-resize--corner {
+    display: none;
+  }
+}
+
+// ---------------------------------------------------------------- launcher
+
+// The launcher stands where its two offsets from the window's right and bottom edges put
+// it; the user drags it to change them (FR-072). It is the anchor the panel hangs on.
+.wt-launcher {
+  position: fixed;
+  right: var(--wt-launcher-right);
+  bottom: var(--wt-launcher-bottom);
+  z-index: var(--wt-layer);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wt-space-2);
+  // One fixed height: the panel's room is worked out from it.
+  height: var(--wt-touch);
+  min-width: var(--wt-touch);
+  padding: 0 var(--wt-space-4);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-pill);
+  background: var(--wt-surface);
+  box-shadow: var(--wt-shadow);
+  color: var(--wt-text);
+  font: inherit;
+  font-size: var(--wt-text-sm);
+  font-weight: var(--wt-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  anchor-name: --wt-launcher;
+  // A drag moves the launcher and must not scroll the page or select its text. No text
+  // cursor is drawn in it either, whatever the browser's caret settings (FR-074).
+  touch-action: none;
+  user-select: none;
+  caret-color: transparent;
+
+  // Says "this can be clicked" before the click (FR-065).
+  @include base.hover {
+    border-color: var(--wt-accent);
+    background: var(--wt-hover);
+  }
+
+  &--dragging {
+    cursor: grabbing;
+  }
+}
+
+// The dot repeats the colour of the total; both read the tone set on the button.
+.wt-launcher__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: color-mix(
+    in srgb,
+    var(--wt-total-to, var(--wt-text-muted)) var(--wt-total-pct, 0%),
+    var(--wt-total-from, var(--wt-text-muted))
+  );
+}
+
+// ---------------------------------------------------------------- header
+
+.wt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wt-space-3);
+  padding: var(--wt-space-4) var(--wt-space-5) var(--wt-space-2);
+
+  @media (max-width: $narrow) {
+    // Five buttons leave no room for the title beside them: it gets a line of its own.
+    flex-wrap: wrap;
+    padding: var(--wt-space-3) var(--wt-space-3) var(--wt-space-2);
+  }
+}
+
+.wt-header__text {
+  min-width: 0;
+}
+
+.wt-header__actions {
+  display: flex;
+  flex: none;
+  gap: var(--wt-space-2);
+  margin-left: auto;
+}
+
+.wt-title {
+  font-size: var(--wt-text-lg);
+  font-weight: var(--wt-weight-bold);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: $narrow) {
+  // The icon alone is enough on a phone; the label stays for screen readers.
+  .wt-header__actions .wt-button:not(.wt-button--icon) span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .wt-header__actions .wt-button:not(.wt-button--icon) {
+    padding: 0;
+  }
+}
+
+// ---------------------------------------------------------------- period
+
+// One framed box for everything that selects the period (FR-055).
+.wt-period {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wt-space-2);
+  margin: var(--wt-space-2) var(--wt-space-5) 0;
+  padding: var(--wt-space-2);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-md);
+
+  @media (max-width: $narrow) {
+    margin: var(--wt-space-2) var(--wt-space-3) 0;
+  }
+}
+
+// Every row is centred and packed: the arrows stand right next to the days (FR-055).
+.wt-period__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wt-space-2);
+}
+
+.wt-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--wt-control);
+  min-width: var(--wt-control);
+  padding: 0 var(--wt-space-3);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-pill);
+  background: var(--wt-surface-raised);
+  color: var(--wt-text);
+  font: inherit;
+  font-size: var(--wt-text-sm);
+  font-weight: var(--wt-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+
+  @include base.touch-size {
+    min-height: var(--wt-touch);
+    min-width: var(--wt-touch);
+  }
+
+  &--arrow {
+    padding: 0;
+
+    // When the row wraps onto several lines, keep both arrows together at the start.
+    @media (max-width: $narrow) {
+      order: -1;
+    }
+  }
+
+  @include base.hover {
+    border-color: var(--wt-accent);
+    background: var(--wt-hover);
+  }
+
+  &--active {
+    border-color: var(--wt-accent);
+    background: var(--wt-accent);
+    color: var(--wt-on-accent);
+
+    // The selected option answers the other way round: the fill gives way to an outline.
+    @include base.hover {
+      background: var(--wt-hover);
+      color: var(--wt-link);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--wt-accent) 35%, transparent);
+    }
+  }
+}
+
+.wt-period__range {
+  gap: var(--wt-space-3);
+}
+
+.wt-field {
+  display: flex;
+  align-items: center;
+  gap: var(--wt-space-2);
+  color: var(--wt-text-muted);
+  font-size: var(--wt-text-sm);
+
+  @media (max-width: $narrow) {
+    flex: 1 1 100%;
+
+    .wt-input {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+}
+
+.wt-input {
+  min-height: var(--wt-control);
+  padding: 0 var(--wt-space-2);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-md);
+  background: var(--wt-surface-raised);
+  color: var(--wt-text);
+  font: inherit;
+  font-size: var(--wt-text-sm);
+
+  @include base.touch-size {
+    min-height: var(--wt-touch);
+  }
+
+  // Date-time fields keep the focus on their inner parts, so `:focus-visible` on the
+  // field itself does not match; text fields show the ring on any focus.
+  &:focus,
+  &:focus-within {
+    outline: 2px solid var(--wt-focus);
+    outline-offset: 2px;
+  }
+
+  &--number {
+    width: 80px;
+  }
+}
+
+.wt-field-error {
+  color: var(--wt-danger);
+  font-size: var(--wt-text-sm);
+}
+
+// ---------------------------------------------------------------- progress
+
+// The bar with its scale stands in the middle between the period box and the table: the
+// same space above and below, and nothing written under it (FR-020, FR-066).
+.wt-progress {
+  padding: calc(var(--wt-space-3) * 2) var(--wt-space-5);
+
+  @media (max-width: $narrow) {
+    padding-inline: var(--wt-space-3);
+  }
+}
+
+.wt-progress__bar {
+  position: relative;
+}
+
+// The header's title again, in two small lines, while the pointer is over the bar (FR-058).
+.wt-progress__tip {
+  position: absolute;
+  bottom: calc(100% + var(--wt-space-1));
+  left: 50%;
+  z-index: 1;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: var(--wt-space-1) var(--wt-space-3);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-sm);
+  background: var(--wt-surface-raised);
+  box-shadow: var(--wt-shadow);
+  font-size: var(--wt-text-xs);
+  line-height: 1.3;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.wt-progress__bar:hover .wt-progress__tip {
+  display: flex;
+}
+
+.wt-progress__tip-period {
+  font-weight: var(--wt-weight-medium);
+}
+
+.wt-progress__track {
+  position: relative;
+  height: var(--wt-bar-height);
+  border-radius: var(--wt-radius-pill);
+  overflow: hidden;
+  // Both gradients are painted at full size, so the colour at any point shows the value
+  // reached there: blue to green up to the norm (60% of the width), then yellow to red.
+  background:
+    linear-gradient(90deg, var(--wt-progress-blue), var(--wt-progress-green)) left / 60% 100% no-repeat,
+    linear-gradient(90deg, var(--wt-progress-yellow), var(--wt-progress-orange), var(--wt-progress-red)) right / 40%
+      100% no-repeat,
+    var(--wt-track);
+}
+
+// Hides the part of the bar that has not been reached.
+.wt-progress__cover {
+  position: absolute;
+  inset: 0 0 0 var(--wt-fill, 0%);
+  background: var(--wt-track);
+}
+
+.wt-progress__tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--wt-pos);
+  width: var(--wt-line);
+  background: var(--wt-surface);
+  opacity: 0.7;
+
+  &--norm {
+    width: 2px;
+    opacity: 1;
+  }
+}
+
+.wt-progress__scale {
+  position: relative;
+  height: 18px;
+  margin-top: var(--wt-space-1);
+  color: var(--wt-text-muted);
+  font-size: var(--wt-text-xs);
+}
+
+.wt-progress__label {
+  position: absolute;
+  left: var(--wt-pos);
+  transform: translateX(-50%);
+
+  &--start {
+    transform: none;
+  }
+
+  &--end {
+    transform: translateX(-100%);
+  }
+}
+
+// ---------------------------------------------------------------- chart
+
+// A period longer than one day: bars per day, month, or year in place of the progress bar
+// (FR-076). The block is a little tighter than the bar's, because the chart is taller.
+.wt-progress--chart {
+  padding-block: var(--wt-space-4);
+}
+
+.wt-chart {
+  --wt-chart-axis: 34px;
+  // The plot grows with the panel: little in the lowest panel, more in a tall one.
+  --wt-chart-height: clamp(64px, 14.5cqh, 150px);
+  --wt-chart-labels: 18px;
+}
+
+.wt-chart__body {
+  position: relative;
+  display: flex;
+  gap: var(--wt-space-2);
+}
+
+// The hours of the vertical axis, each centred on its line.
+.wt-chart__axis {
+  position: relative;
+  flex: none;
+  width: var(--wt-chart-axis);
+  height: var(--wt-chart-height);
+  color: var(--wt-text-muted);
+  font-size: var(--wt-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.wt-chart__tick {
+  position: absolute;
+  right: 0;
+  bottom: var(--wt-pos);
+  line-height: 1;
+  transform: translateY(50%);
+}
+
+// Scrolls sideways when the user has zoomed in and the bars no longer fit.
+.wt-chart__view {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: auto hidden;
+  border-radius: var(--wt-radius-sm);
+  scrollbar-width: thin;
+
+  &:focus-visible {
+    outline-offset: 2px;
+  }
+}
+
+.wt-chart__plot {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  // The bars never touch (FR-076).
+  gap: 2px;
+  min-width: 100%;
+  width: max-content;
+  height: calc(var(--wt-chart-height) + var(--wt-chart-labels));
+}
+
+.wt-chart__line {
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--wt-chart-labels) + (var(--wt-chart-height) * var(--wt-pos-ratio, 1)));
+  left: 0;
+  height: 0;
+  border-top: var(--wt-line) solid var(--wt-border);
+  pointer-events: none;
+
+  // The 8-hour norm of a day, as the mark on the progress bar.
+  &--norm {
+    border-top: var(--wt-line) dashed var(--wt-text-muted);
+    opacity: 0.7;
+  }
+}
+
+// One column per day, month, or year. The whole column answers to the pointer, so a day
+// with nothing logged can be asked about too.
+.wt-chart__col {
+  position: relative;
+  display: flex;
+  flex: 1 0 var(--wt-col-min, 3px);
+  flex-direction: column;
+  min-width: var(--wt-col-min, 3px);
+  // A click shows only this bar's part of the period (FR-080).
+  cursor: pointer;
+}
+
+.wt-chart__slot {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  justify-content: center;
+  height: var(--wt-chart-height);
+}
+
+.wt-chart__bar {
+  width: min(100%, 48px);
+  height: var(--wt-bar-height, 0%);
+  // A bar with any time at all can be seen.
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: color-mix(
+    in srgb,
+    var(--wt-bar-to, var(--wt-track)) var(--wt-bar-pct, 0%),
+    var(--wt-bar-from, var(--wt-track))
+  );
+  opacity: 0.75;
+}
+
+.wt-chart__col[data-seconds='0'] .wt-chart__bar {
+  min-height: 0;
+}
+
+// Under the pointer, or chosen with the arrow keys: the bar at full strength (FR-079).
+.wt-chart__col:hover,
+.wt-chart__col--active {
+  background: color-mix(in srgb, var(--wt-text) 6%, transparent);
+
+  .wt-chart__bar {
+    opacity: 1;
+  }
+}
+
+.wt-chart__label {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  color: var(--wt-text-muted);
+  font-size: var(--wt-text-xs);
+  line-height: var(--wt-chart-labels);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+// The first and the last label stay inside the chart.
+.wt-chart__col:first-of-type .wt-chart__label {
+  left: 0;
+  transform: none;
+}
+
+.wt-chart__col:last-of-type:not(:first-of-type) .wt-chart__label {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.wt-chart__tools {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--wt-space-1);
+}
+
+.wt-chart__zoom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-sm);
+  background: var(--wt-surface-raised);
+  color: var(--wt-text);
+  cursor: pointer;
+
+  .wt-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.4;
+  }
+
+  @include base.hover {
+    border-color: var(--wt-accent);
+    background: var(--wt-hover);
+  }
+
+  @include base.touch-size {
+    width: var(--wt-touch);
+    height: var(--wt-touch);
+  }
+}
+
+@include base.touch-size {
+  // Two touch-sized buttons need the height.
+  .wt-chart {
+    --wt-chart-height: clamp(96px, 14.5cqh, 150px);
+  }
+}
+
+// What the bar under the pointer stands for, and its total (FR-079).
+.wt-chart__tip {
+  position: absolute;
+  bottom: calc(100% + var(--wt-space-1));
+  left: var(--wt-tip-left, 50%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--wt-space-1) var(--wt-space-3);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-sm);
+  background: var(--wt-surface-raised);
+  box-shadow: var(--wt-shadow);
+  font-size: var(--wt-text-xs);
+  line-height: 1.3;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.wt-chart__tip-period {
+  font-weight: var(--wt-weight-medium);
+}
+
+// ---------------------------------------------------------------- table
+
+.wt-table-wrap {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  // Room for the column headers, one row, and the total row, even in a panel the window
+  // made lower: such a panel scrolls.
+  min-height: 124px;
+  border-top: var(--wt-line) solid var(--wt-border);
+
+  > * {
+    flex: none;
+  }
+
+  @media (max-width: $narrow) {
+    display: block;
+  }
+}
+
+// Takes all the height the panel has left. A short table sits at its top and the rest
+// stays empty (FR-061); the total row below keeps its place at the bottom of the panel.
+.wt-table-area {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+
+  > * {
+    flex: none;
+  }
+
+  @media (max-width: $narrow) {
+    display: block;
+    min-height: 96px;
+  }
+}
+
+// The rows scroll inside this area, so the header above and the total below stay in view.
+.wt-table-area > .wt-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+
+  @media (max-width: $narrow) {
+    overflow-y: visible;
+  }
+}
+
+// Covers the table area while a load runs; the rows already loaded show through (FR-060).
+.wt-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--wt-surface) 65%, transparent);
+}
+
+.wt-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--wt-track);
+  border-top-color: var(--wt-accent);
+  border-radius: 50%;
+  animation: wt-spin 0.8s linear infinite;
+}
+
+.wt-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+.wt-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  th,
+  td {
+    padding: var(--wt-space-3) var(--wt-space-2);
+    border-bottom: var(--wt-line) solid var(--wt-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    padding-block: var(--wt-space-2);
+    background: var(--wt-surface-raised);
+    color: var(--wt-text-muted);
+    font-size: var(--wt-text-xs);
+    font-weight: var(--wt-weight-medium);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  th[aria-sort='ascending'] .wt-sort::after {
+    opacity: 1;
+  }
+
+  th[aria-sort='descending'] .wt-sort::after {
+    opacity: 1;
+    transform: rotate(180deg);
+  }
+
+  th:first-child,
+  td:first-child {
+    padding-left: var(--wt-space-5);
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: var(--wt-space-5);
+  }
+}
+
+// A column header is a button that sorts by its column (FR-063). The triangle shows the
+// direction of the active column; the others get a faint one on hover.
+.wt-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wt-space-1);
+  min-height: var(--wt-space-5);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+
+  @include base.touch-size {
+    min-height: var(--wt-touch);
+  }
+
+  &::after {
+    content: '';
+    border-inline: 4px solid transparent;
+    border-bottom: 5px solid currentColor;
+    opacity: 0;
+  }
+
+  &:hover {
+    color: var(--wt-link);
+  }
+
+  &:hover::after {
+    opacity: 0.5;
+  }
+}
+
+// Ticket numbers have a near-constant length and never wrap; titles take the rest (FR-036).
+.wt-col-key {
+  width: 120px;
+  white-space: nowrap;
+}
+
+.wt-col-title {
+  overflow-wrap: anywhere;
+}
+
+.wt-col-entries {
+  width: 200px;
+  color: var(--wt-text-muted);
+  font-size: var(--wt-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.wt-col-sum {
+  width: 88px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.wt-table th.wt-col-sum,
+.wt-table td.wt-col-sum {
+  text-align: right;
+}
+
+.wt-key {
+  display: inline-block;
+  color: var(--wt-link);
+  font-weight: var(--wt-weight-bold);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  @include base.touch-size {
+    min-height: var(--wt-touch);
+    min-width: var(--wt-touch);
+    line-height: var(--wt-touch);
+  }
+}
+
+.wt-entries {
+  list-style: none;
+
+  li {
+    white-space: nowrap;
+  }
+
+  li + li {
+    margin-top: var(--wt-space-1);
+  }
+}
+
+@media (max-width: $narrow) {
+  // On a phone each ticket becomes a small block: number and sum on the first line, then
+  // the title, then the entries. All four pieces stay visible without sideways scrolling.
+  .wt-table,
+  .wt-table tbody {
+    display: block;
+  }
+
+  .wt-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .wt-table tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: var(--wt-space-3);
+    padding: var(--wt-space-2) var(--wt-space-3);
+    border-bottom: var(--wt-line) solid var(--wt-border);
+  }
+
+  .wt-table td,
+  .wt-table td:first-child,
+  .wt-table td:last-child {
+    width: auto;
+    padding: var(--wt-space-1) 0;
+    border: 0;
+  }
+
+  .wt-table td.wt-col-key {
+    grid-area: 1 / 1;
+  }
+
+  .wt-table td.wt-col-sum {
+    grid-area: 1 / 2;
+    align-self: center;
+    font-weight: var(--wt-weight-bold);
+  }
+
+  .wt-table td.wt-col-title,
+  .wt-table td.wt-col-entries {
+    grid-column: 1 / -1;
+  }
+
+  .wt-entries li {
+    white-space: normal;
+  }
+}
+
+.wt-footer {
+  display: flex;
+  align-items: baseline;
+  // Label and value sit together at the right edge, in one colour (FR-062).
+  justify-content: flex-end;
+  gap: var(--wt-space-2);
+  padding: var(--wt-space-3) var(--wt-space-5);
+  border-top: var(--wt-line) solid var(--wt-border);
+  font-weight: var(--wt-weight-bold);
+
+  @media (max-width: $narrow) {
+    padding: var(--wt-space-3);
+  }
+}
+
+.wt-message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wt-space-3);
+  padding: var(--wt-space-4) var(--wt-space-5);
+  color: var(--wt-text-muted);
+
+  @media (max-width: $narrow) {
+    padding: var(--wt-space-3);
+  }
+
+  &--error {
+    color: var(--wt-danger);
+  }
+}
+
+// ---------------------------------------------------------------- settings
+
+.wt-popover {
+  position: absolute;
+  top: 60px;
+  right: var(--wt-space-4);
+  z-index: 2;
+  width: min(320px, calc(100% - 2 * var(--wt-space-4)));
+  padding: var(--wt-space-4);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-md);
+  background: var(--wt-surface);
+  box-shadow: var(--wt-shadow);
+
+  @media (max-width: $narrow) {
+    top: 64px;
+    right: var(--wt-space-2);
+    left: var(--wt-space-2);
+    width: auto;
+  }
+}
+
+.wt-popover__title {
+  font-size: var(--wt-text-md);
+  font-weight: var(--wt-weight-bold);
+}
+
+// Separates the title from the settings below it.
+.wt-divider {
+  height: 0;
+  margin: var(--wt-space-3) 0 0;
+  border: 0;
+  border-top: var(--wt-line) solid var(--wt-border);
+}
+
+.wt-popover__row {
+  display: flex;
+  align-items: center;
+  gap: var(--wt-space-2);
+  margin-top: var(--wt-space-3);
+  font-size: var(--wt-text-sm);
+}
+
+.wt-popover__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--wt-space-2);
+  margin-top: var(--wt-space-4);
+}
+
+// The theme switch: a pill with the sun on the left and the moon on the right. A round
+// knob in the accent colour slides under the icon of the active theme. The track colours
+// come from the theme, which the switch previews at once; the position comes from
+// `aria-checked`. The knob keeps the same gap to the border on every side, so it sits
+// flush at the left in light mode and at the right in dark mode.
+.wt-switch {
+  --wt-switch-gap: 2px;
+  --wt-switch-border-width: 2px;
+  // The room inside the border, and the knob that fits into it.
+  --wt-switch-inner: calc(var(--wt-switch-height) - 2 * var(--wt-switch-border-width));
+  --wt-switch-knob-size: calc(var(--wt-switch-inner) - 2 * var(--wt-switch-gap));
+
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  box-sizing: border-box;
+  width: calc(2 * var(--wt-switch-height));
+  height: var(--wt-switch-height);
+  padding: 0;
+  border: var(--wt-switch-border-width) solid var(--wt-switch-border);
+  border-radius: var(--wt-radius-pill);
+  background: var(--wt-switch-track);
+  color: var(--wt-switch-icon);
+  cursor: pointer;
+
+  @include base.touch-size {
+    --wt-switch-height: var(--wt-touch);
+  }
+
+  @include base.hover {
+    border-color: var(--wt-accent);
+  }
+}
+
+.wt-switch__knob {
+  position: absolute;
+  top: var(--wt-switch-gap);
+  left: var(--wt-switch-gap);
+  width: var(--wt-switch-knob-size);
+  height: var(--wt-switch-knob-size);
+  border-radius: 50%;
+  background: var(--wt-accent);
+  transition: transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+// Each icon lies exactly on one of the knob's two places, so it is centred in the knob.
+.wt-switch__icon {
+  position: absolute;
+  top: var(--wt-switch-gap);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--wt-switch-knob-size);
+  height: var(--wt-switch-knob-size);
+  transition: transform 0.35s ease;
+
+  &--sun {
+    left: var(--wt-switch-gap);
+  }
+
+  &--moon {
+    right: var(--wt-switch-gap);
+  }
+
+  .wt-icon {
+    width: calc(var(--wt-switch-knob-size) * 0.6);
+    height: calc(var(--wt-switch-knob-size) * 0.6);
+  }
+
+  // A crescent is heavier at its lower left; this puts what the eye sees in the middle.
+  &--moon .wt-icon {
+    translate: 6% -6%;
+  }
+}
+
+// Light: the knob is on the left, under the sun.
+.wt-switch[aria-checked='false'] {
+  .wt-switch__icon--sun {
+    color: var(--wt-on-accent);
+  }
+
+  .wt-switch__icon--sun .wt-icon {
+    fill: currentColor;
+  }
+
+  .wt-switch__icon--moon {
+    transform: rotate(15deg);
+  }
+}
+
+// Dark: the knob is on the right, under the moon. It travels the inner width less its own
+// width less its own size and both gaps, which is exactly one switch height.
+.wt-switch[aria-checked='true'] {
+  .wt-switch__knob {
+    transform: translateX(var(--wt-switch-height));
+  }
+
+  .wt-switch__icon--sun {
+    transform: rotate(45deg);
+  }
+
+  .wt-switch__icon--moon {
+    color: var(--wt-on-accent);
+  }
+
+  .wt-switch__icon--moon .wt-icon {
+    fill: currentColor;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-switch__knob,
+  .wt-switch__icon {
+    transition: none;
+  }
+}

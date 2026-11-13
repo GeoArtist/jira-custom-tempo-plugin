@@ -1,0 +1,26 @@
+{
+  "issues": [
+    {
+      "id": "10001",
+      "key": "AM-10234",
+      "fields": {
+        "summary": "Integracja z zewnetrznym API platnosci - obsluga zwrotow, czesciowych platnosci, webhookow statusu oraz migracja historycznych transakcji do nowego modelu danych Integracja z zewnetrznym API platnosci - obsluga zwrotow, czesciowych platnosci, webhookow st"
+      }
+    },
+    {
+      "id": "10002",
+      "key": "AM-20012",
+      "fields": {
+        "summary": "Daily standup i spotkania"
+      }
+    },
+    {
+      "id": "10003",
+      "key": "AM-10087",
+      "fields": {
+        "summary": "Code review modulu raportow"
+      }
+    }
+  ],
+  "isLast": true
+}

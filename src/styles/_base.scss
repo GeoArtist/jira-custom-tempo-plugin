@@ -1,0 +1,160 @@
+// Reset and the pieces shared by the panel and the launcher.
+@use 'tokens';
+
+// Controls grow to the touch size on touch devices and on narrow screens (Principle III).
+@mixin touch-size {
+  @media (pointer: coarse), (max-width: 600px) {
+    @content;
+  }
+}
+
+// The look under the pointer (FR-065). The transition belongs to the hover state only, so
+// a change of theme repaints at once and only the pointer coming in is animated.
+@mixin hover {
+  &:hover:not(:disabled) {
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+    @content;
+  }
+}
+
+// The add-on lives in a shadow root on a page it does not own: start from a clean slate.
+:host {
+  all: initial;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.wt-root {
+  color: var(--wt-text);
+  font-family: var(--wt-font);
+  font-size: var(--wt-text-md);
+  line-height: 1.4;
+  text-align: left;
+}
+
+h1,
+h2,
+p,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:focus-visible {
+  outline: 2px solid var(--wt-focus);
+  outline-offset: 2px;
+}
+
+.wt-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wt-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wt-space-2);
+  min-height: var(--wt-control);
+  min-width: var(--wt-control);
+  padding: 0 var(--wt-space-3);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-md);
+  background: var(--wt-surface-raised);
+  color: var(--wt-text);
+  font: inherit;
+  font-size: var(--wt-text-sm);
+  font-weight: var(--wt-weight-medium);
+  cursor: pointer;
+
+  @include touch-size {
+    min-height: var(--wt-touch);
+    min-width: var(--wt-touch);
+  }
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.6;
+  }
+
+  @include hover {
+    border-color: var(--wt-accent);
+    background: var(--wt-hover);
+  }
+
+  &--icon {
+    padding: 0;
+  }
+
+  // Back and forward: switched off when there is nowhere to go, not because of a load.
+  &--history:disabled {
+    cursor: default;
+    opacity: 0.4;
+  }
+
+  &--primary {
+    border-color: var(--wt-accent);
+    background: var(--wt-accent);
+    color: var(--wt-on-accent);
+
+    // A filled control turns into its outline under the pointer.
+    @include hover {
+      background: var(--wt-hover);
+      color: var(--wt-link);
+    }
+  }
+
+  &--busy .wt-icon {
+    animation: wt-spin 0.9s linear infinite;
+  }
+}
+
+@keyframes wt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-button--busy .wt-icon {
+    animation: none;
+  }
+}
+
+// A total in the colour of the progress bar (FR-018). Script sets the two tone tokens and
+// the mix percentage; without them the normal text colour applies.
+.wt-total,
+.wt-footer__label {
+  color: color-mix(
+    in srgb,
+    var(--wt-total-to, var(--wt-text)) var(--wt-total-pct, 0%),
+    var(--wt-total-from, var(--wt-text))
+  );
+  font-weight: var(--wt-weight-bold);
+  white-space: nowrap;
+}
+
+// Nothing logged: the total steps back (FR-068). On the launcher the attribute is on the
+// button, and the total inside it follows.
+.wt-total[data-zero],
+.wt-footer__label[data-zero],
+[data-zero] > .wt-total {
+  color: var(--wt-text-muted);
+}

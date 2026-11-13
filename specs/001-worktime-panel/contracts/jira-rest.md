@@ -2,39 +2,50 @@
 
 **Feature**: [../spec.md](../spec.md) | **Research**: [../research.md](../research.md) (R3, R4)
 
-The app consumes the Jira Cloud platform REST API v3 as the current user, through
-`requestJira` of `@forge/bridge`. It exposes no API of its own. This file fixes exactly which
-requests the app sends and which response fields it reads, so tests can mock them and reviewers
-can check the permission set.
+The add-on is a browser extension. Its content script runs inside a Jira Cloud page and reads
+the Jira Cloud platform REST API v3 of that same site, with the session the user already has in
+the browser. It exposes no API of its own. This file fixes exactly which requests the add-on
+sends and which response fields it reads, so tests can mock them and reviewers can check what
+it touches.
 
-All requests are read-only. The app never writes to Jira.
+## Access
 
-## Scopes
+| Aspect | Rule |
+|--------|------|
+| Method | `GET` only. The add-on never sends `POST`, `PUT`, or `DELETE` (FR-050). |
+| Address | A path on the page's own origin, for example `/rest/api/3/myself`. Never another host. |
+| Credentials | None held by the add-on. Requests are sent with `credentials: 'same-origin'`, so the browser attaches the user's Jira session. |
+| Header | `Accept: application/json` |
+| What the user can see | Exactly what they can see in Jira themselves; the add-on has no access of its own. |
 
-| Scope | Needed for |
-|-------|-----------|
-| `read:jira-work` | issue search, issue worklogs |
+Because every request is a same-origin `GET`, no cross-site-request token is needed and no
+extension permission is involved.
 
-This is the complete list. Adding any scope requires a plan change (constitution: smallest
-permission set).
+## 1. Signed-in user
 
-## Values taken from the host context, not from REST
+`GET /rest/api/3/myself`
 
-`view.getContext()` supplies `accountId`, `timezone` (IANA name), and `siteUrl`. The app does
-not call `/rest/api/3/myself`.
+Read fields:
 
-## 1. Find candidate issues
+| Field | Use |
+|-------|-----|
+| `accountId` | keep only this user's worklogs (FR-001) |
+| `timeZone` | IANA zone for day boundaries and displayed times (FR-026); when absent, the browser's own time zone |
 
-`POST /rest/api/3/search/jql`
+Sent once when the page loads. Any status other than 200, or an answer without `accountId`,
+means nobody is signed in to Jira on this page: the add-on draws nothing and sends nothing
+else.
 
-Request body:
+The site address used for ticket links is the page's own origin.
 
-```json
-{
-  "jql": "worklogAuthor = currentUser() AND worklogDate >= \"2026-11-05\" AND worklogDate <= \"2026-11-07\"",
-  "fields": ["summary"],
-  "maxResults": 100
-}
+## 2. Find candidate issues
+
+`GET /rest/api/3/search/jql?jql={jql}&fields=summary&maxResults=100[&nextPageToken={token}]`
+
+`jql` (URL-encoded):
+
+```text
+worklogAuthor = currentUser() AND worklogDate >= "2026-11-05" AND worklogDate <= "2026-11-07"
 ```
 
 - The two dates are the period's `from` minus one day and `to` plus one day. The padding covers
@@ -45,21 +56,22 @@ Request body:
 Read fields per issue: `id`, `key`, `fields.summary`.
 
 The result is a superset of what is displayed. JQL matches an issue when any worklog is by the
-user and any worklog is in the range; the exact filtering happens in step 2.
+user and any worklog is in the range; the exact filtering happens in step 3.
 
-Fallback: if this request fails with HTTP 400, the app repeats it once with the
-`worklogAuthor` clause removed (`worklogDate` clauses only). Step 2 still filters by author, so
+Fallback: if this request fails with HTTP 400, the add-on repeats it once with the
+`worklogAuthor` clause removed (`worklogDate` clauses only). Step 3 still filters by author, so
 the displayed result is the same; only more issues are scanned.
 
-## 2. Worklogs of one issue
+## 3. Worklogs of one issue
 
-`GET /rest/api/3/issue/{issueId}/worklog?startedAfter={ms}&startedBefore={ms}&maxResults=5000`
+`GET /rest/api/3/issue/{issueId}/worklog?startedAfter={ms}&startedBefore={ms}&maxResults=5000&startAt={n}`
 
 - `startedAfter` = `period.startInstant − 1`, `startedBefore` = `period.endInstant + 1` (epoch
   milliseconds). Inclusivity of `startedBefore` is not documented, so the window is widened by
   1 ms on each side and narrowed again in the client.
-- Pagination: if `startAt + worklogs.length < total`, repeat with `startAt`.
-- Sent for every issue from step 1, at most 5 requests in flight at a time.
+- Pagination: the first request uses `startAt=0`; while `startAt + worklogs.length < total`,
+  repeat with the next `startAt`.
+- Sent for every issue from step 2, at most 5 requests in flight at a time.
 
 Read fields per worklog:
 
@@ -68,10 +80,10 @@ Read fields per worklog:
 | `id` | identity |
 | `issueId` | grouping |
 | `author.accountId` | keep only the current user's worklogs (FR-001) |
-| `started` | start instant; format `2026-11-06T07:00:00.000+0100` (offset without colon) |
+| `started` | start instant; format `2026-11-06T07:00:00.000+0100` (offset with or without colon, or `Z`) |
 | `timeSpentSeconds` | duration |
 
-Client-side filter (authoritative): `author.accountId == context.accountId` and
+Client-side filter (authoritative): `author.accountId == session.accountId` and
 `startInstant ≤ started < endInstant`.
 
 HTTP 404 for a single issue (issue no longer visible, spec edge case) is not an error: that
@@ -89,15 +101,14 @@ issue contributes no entries.
 
 ## Request budget
 
-For the scale in SC-009 (60 issues, 200 worklogs in a month):
+| Situation | Requests |
+|-----------|----------|
+| Page load (launcher, today) | 1 (`/myself`) + 1 search + one per ticket worked on today |
+| Panel opened on a typical day (3 to 8 tickets) | 4 to 9 |
+| A month with 60 tickets and 200 worklogs (SC-009) | 61 to 62 |
 
-| Step | Requests |
-|------|----------|
-| search | 1 to 2 |
-| worklogs | 60 |
-| **Total** | **61 to 62** |
-
-A single-day load for a typical day (3 to 8 issues) is 4 to 10 requests.
+While the open panel shows today, the launcher takes its total from the panel's load instead of
+asking again. Nothing is requested while the browser tab is hidden.
 
 ## Known limitations of the source data
 

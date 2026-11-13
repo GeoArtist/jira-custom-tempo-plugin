@@ -51,3 +51,5 @@
 - Planning risk: whether Jira Cloud allows a launcher on every Jira page (User Story 5, FR-040)
   must be verified in `/speckit-plan`.
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
+- Validation run 5 (2026-11-12), after Amendment 5 (standalone browser extension): all items pass. The spec names the delivery form (browser extension) in Assumptions because it defines what "install" and "every Jira page" mean for the user; requirements stay free of implementation detail.
+- Notes 2 and 3 of validation run 1 above are out of date: periods longer than one day show an inactive bar (Clarifications), and the custom range has date and time.

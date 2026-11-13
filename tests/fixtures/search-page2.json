@@ -1,0 +1,12 @@
+{
+  "issues": [
+    {
+      "id": "10003",
+      "key": "AM-10087",
+      "fields": {
+        "summary": "Code review modulu raportow"
+      }
+    }
+  ],
+  "isLast": true
+}

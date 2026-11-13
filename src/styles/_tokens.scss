@@ -1,0 +1,126 @@
+// Design tokens. Every colour, space, radius, and type size used by components comes from
+// here (constitution, Principle IV). A theme is only a different set of token values.
+//
+// The add-on is drawn inside a Jira page, so the tokens live on its own root element
+// (`.wt-root`), not on the page, and sizes are in px: `rem` would follow Jira's root font
+// size, which the add-on does not control.
+
+.wt-root {
+  // Spacing
+  --wt-space-1: 4px;
+  --wt-space-2: 8px;
+  --wt-space-3: 12px;
+  --wt-space-4: 16px;
+  --wt-space-5: 20px;
+
+  // Radius
+  --wt-radius-sm: 6px;
+  --wt-radius-md: 10px;
+  --wt-radius-lg: 14px;
+  --wt-radius-pill: 999px;
+
+  // Type
+  --wt-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --wt-text-xs: 11px;
+  --wt-text-sm: 13px;
+  --wt-text-md: 15px;
+  --wt-text-lg: 18px;
+  --wt-weight-normal: 400;
+  --wt-weight-medium: 600;
+  --wt-weight-bold: 700;
+
+  // Sizes
+  --wt-control: 34px; // height of a control used with a mouse
+  --wt-touch: 44px; // 44px: minimum touch target
+  --wt-panel-width: 800px;
+  --wt-panel-height: 50svh; // the default; the user changes it by dragging an edge (FR-059)
+  --wt-panel-min-height: 440px; // the lowest panel that still shows one table row
+  --wt-panel-min-width: 640px; // the narrowest panel whose table cells stay on one line
+  --wt-panel-gap: 8px; // between the launcher and the panel that hangs on it
+  // The launcher's default place leaves the corner itself to Jira's own floating button and
+  // stands level with it: its middle is 48px above the window's bottom edge. The user can
+  // drag it elsewhere (FR-072); script then sets both values.
+  --wt-launcher-right: 88px;
+  --wt-launcher-bottom: 26px;
+  --wt-switch-height: 32px; // the theme switch is twice as wide as it is high
+  --wt-edge: 16px; // distance of the launcher and the panel from the window edge
+  --wt-layer: 2147483000; // above everything Jira draws
+  --wt-bar-height: 12px;
+  --wt-line: 1px;
+
+  // What a control looks like under the pointer: a tint of the accent on the surface.
+  --wt-hover: color-mix(in srgb, var(--wt-accent) 18%, var(--wt-surface));
+}
+
+// Dark is the default appearance (FR-045).
+.wt-root,
+.wt-root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --wt-bg: #0f1218;
+  --wt-surface: #171b23;
+  --wt-surface-raised: #1f2530;
+  --wt-border: #2c3340;
+  --wt-text: #e6e9ef;
+  --wt-text-muted: #9aa3b2;
+  --wt-link: #7ab5ff;
+  --wt-accent: #2563eb;
+  --wt-on-accent: #ffffff;
+  --wt-focus: #8ab4ff;
+  --wt-danger: #ff8a80;
+  --wt-track: #2a303c;
+  --wt-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+
+  // Theme switch.
+  --wt-switch-track: #0b0b0b;
+  --wt-switch-border: #4c4c50;
+  --wt-switch-icon: #8a8a8f;
+
+  // Bar fills.
+  --wt-progress-blue: #6cc8ff;
+  --wt-progress-green: #4fd08f;
+  --wt-progress-yellow: #ffd24d;
+  --wt-progress-orange: #ff9f43;
+  --wt-progress-red: #ff5d5d;
+
+  // The same meaning as text: tuned for contrast against the surface (FR-048).
+  --wt-tone-blue: #6cc8ff;
+  --wt-tone-green: #5fd39a;
+  --wt-tone-yellow: #ffd24d;
+  --wt-tone-orange: #ffa24a;
+  --wt-tone-red: #ff8078;
+}
+
+.wt-root[data-theme='light'] {
+  color-scheme: light;
+
+  --wt-bg: #f4f5f7;
+  --wt-surface: #ffffff;
+  --wt-surface-raised: #f7f8fa;
+  --wt-border: #dde1e8;
+  --wt-text: #172033;
+  --wt-text-muted: #5a6475;
+  --wt-link: #0b5cd7;
+  --wt-accent: #0c66e4;
+  --wt-on-accent: #ffffff;
+  --wt-focus: #0c66e4;
+  --wt-danger: #b3261e;
+  --wt-track: #e9edf3;
+  --wt-shadow: 0 8px 24px rgb(23 32 51 / 12%);
+
+  --wt-switch-track: #ffffff;
+  --wt-switch-border: #d8d6e0;
+  --wt-switch-icon: #8f8f99;
+
+  --wt-progress-blue: #7dd3fc;
+  --wt-progress-green: #34c98a;
+  --wt-progress-yellow: #fbbf24;
+  --wt-progress-orange: #fb923c;
+  --wt-progress-red: #ef4444;
+
+  --wt-tone-blue: #0a6199;
+  --wt-tone-green: #146c43;
+  --wt-tone-yellow: #7a5200;
+  --wt-tone-orange: #a34100;
+  --wt-tone-red: #b3261e;
+}

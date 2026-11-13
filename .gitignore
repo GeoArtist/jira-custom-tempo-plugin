@@ -1,12 +1,25 @@
-# Python-generated files
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-e2e/
+
+# Test output
+test-results/
+playwright-report/
+
+# Logs and local environment
+*.log
+.env*
+
+# Spec Kit helper scripts (Python)
 __pycache__/
 *.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
 
-# Virtual environments
-.venv
+# OS and editor files
+.DS_Store
+Thumbs.db
 
 .claude
+.vitest/

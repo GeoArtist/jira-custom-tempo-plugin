@@ -1,0 +1,17 @@
+{
+  "startAt": 0,
+  "maxResults": 5000,
+  "total": 2,
+  "worklogs": [
+    {
+      "id": "20",
+      "issueId": "10003",
+      "author": {
+        "accountId": "me",
+        "displayName": "Test"
+      },
+      "started": "2026-11-06T08:00:00.000+0100",
+      "timeSpentSeconds": 1800
+    }
+  ]
+}

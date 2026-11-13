@@ -1,0 +1,57 @@
+{
+  "startAt": 0,
+  "maxResults": 5000,
+  "total": 5,
+  "worklogs": [
+    {
+      "id": "1",
+      "issueId": "10001",
+      "author": {
+        "accountId": "me",
+        "displayName": "Test"
+      },
+      "started": "2026-11-06T07:00:00.000+0100",
+      "timeSpentSeconds": 12600
+    },
+    {
+      "id": "2",
+      "issueId": "10001",
+      "author": {
+        "accountId": "me",
+        "displayName": "Test"
+      },
+      "started": "2026-11-06T13:00:00.000+0100",
+      "timeSpentSeconds": 3600
+    },
+    {
+      "id": "3",
+      "issueId": "10001",
+      "author": {
+        "accountId": "me",
+        "displayName": "Test"
+      },
+      "started": "2026-11-06T15:05:00.000+0100",
+      "timeSpentSeconds": 8700
+    },
+    {
+      "id": "4",
+      "issueId": "10001",
+      "author": {
+        "accountId": "someone-else",
+        "displayName": "Test"
+      },
+      "started": "2026-11-06T09:00:00.000+0100",
+      "timeSpentSeconds": 3600
+    },
+    {
+      "id": "5",
+      "issueId": "10001",
+      "author": {
+        "accountId": "me",
+        "displayName": "Test"
+      },
+      "started": "2026-11-05T10:00:00.000+0100",
+      "timeSpentSeconds": 3600
+    }
+  ]
+}

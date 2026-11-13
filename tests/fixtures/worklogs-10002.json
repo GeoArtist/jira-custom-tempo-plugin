@@ -1,0 +1,37 @@
+{
+  "startAt": 0,
+  "maxResults": 5000,
+  "total": 3,
+  "worklogs": [
+    {
+      "id": "6",
+      "issueId": "10002",
+      "author": {
+        "accountId": "me",
+        "displayName": "Test"
+      },
+      "started": "2026-11-06T17:30:00.000+0100",
+      "timeSpentSeconds": 3600
+    },
+    {
+      "id": "7",
+      "issueId": "10002",
+      "author": {
+        "accountId": "me",
+        "displayName": "Test"
+      },
+      "started": "2026-11-06T10:30:00.000+0100",
+      "timeSpentSeconds": 2700
+    },
+    {
+      "id": "8",
+      "issueId": "10002",
+      "author": {
+        "accountId": "me",
+        "displayName": "Test"
+      },
+      "started": "2026-11-05T09:00:00.000+0100",
+      "timeSpentSeconds": 1800
+    }
+  ]
+}

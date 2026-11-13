@@ -1,0 +1,34 @@
+{
+  "name": "jira-custom-tempo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser extension showing your logged work time on Jira Cloud pages",
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev --mode demo",
+    "build": "vp build && node scripts/check-size.ts",
+    "build:demo": "vp build --mode demo",
+    "preview": "vp build --mode demo && vp preview --mode demo",
+    "package": "vp build && node scripts/check-size.ts && node scripts/package.ts",
+    "icons": "node scripts/make-icons.ts",
+    "lint": "vp check",
+    "test": "vp test run",
+    "test:e2e": "vp build && playwright test",
+    "check": "vp check && vp test run && npm run build && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@types/node": "22.20.5",
+    "happy-dom": "21.0.4",
+    "sass": "1.108.2",
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.2.0",
+    "vite-plus": "1.2.0"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.2.0"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

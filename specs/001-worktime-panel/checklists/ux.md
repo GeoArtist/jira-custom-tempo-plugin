@@ -68,4 +68,5 @@
 - `/speckit-implement` reads checklist checkbox state as a gate and must not modify markers
 - `checklists/requirements.md` has a separate built-in lifecycle maintained by `/speckit-specify` and `/speckit-clarify`
 - Several items point at details that already exist in `contracts/ui.md` or `data-model.md` but not in `spec.md`; for those, the review decision is whether the detail belongs in the spec or the design files are enough
+- 2026-11-12: the plugin became a browser extension (spec Amendment 5). Items written for the Jira Cloud app no longer apply as worded and need re-reading against the new User Story 5: CHK003, CHK010, CHK018, CHK023, CHK025 (gadget, pop-up, command palette, Apps menu, native mobile apps). CHK036 is settled: the spec and the plan now agree on the large-period layout.
 - Add comments or findings inline

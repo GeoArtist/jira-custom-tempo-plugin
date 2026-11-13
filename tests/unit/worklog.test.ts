@@ -105,3 +105,18 @@ describe('buildRows', () => {
     expect(buildRows(issues, tie, fakeSession, today).map((row) => row.ticket.key)).toEqual(['AM-10087', 'AM-20012']);
   });
 });
+
+describe('buildRows for another author', () => {
+  it('keeps only the worklogs of the author it is given', () => {
+    const rows = buildRows(issues, allWorklogs, fakeSession, today, 'someone-else');
+    expect(rows.map((row) => row.ticket.key)).toEqual(['AM-10234']);
+    expect(totalOf(rows)).toBe(3600);
+    expect(rows[0]?.entries).toHaveLength(1);
+  });
+
+  it('is the signed-in user when no author is given', () => {
+    expect(buildRows(issues, allWorklogs, fakeSession, today)).toEqual(
+      buildRows(issues, allWorklogs, fakeSession, today, fakeSession.accountId),
+    );
+  });
+});

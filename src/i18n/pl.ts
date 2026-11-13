@@ -1,5 +1,6 @@
 // Every user-visible text of the app. No other source file may contain Polish text.
-// Wording is fixed by specs/001-worktime-panel/contracts/ui.md.
+// Wording is fixed by specs/001-worktime-panel/contracts/ui.md and, for the texts about
+// the selected person, by specs/002-other-user-worktime/spec.md (FR-029).
 
 export const pl = {
   back: 'Cofnij',
@@ -47,6 +48,18 @@ export const pl = {
   cancel: 'Anuluj',
   save: 'Zapisz',
   settingsNotSaved: 'Nie udało się zapisać ustawień w tej przeglądarce.',
+
+  personGroup: 'Użytkownik',
+  personCurrent: 'Obecny użytkownik',
+  personOther: 'Inny użytkownik',
+  personName: 'Imię i nazwisko',
+  personNameRequired: 'Podaj imię i nazwisko.',
+  personNotFound: 'Nie znaleziono użytkownika.\nNie można zapisać ustawień.',
+  ok: 'OK',
+  personCheckFailed: 'Nie udało się sprawdzić użytkownika w Jirze. Ustawienia nie zostały zapisane.',
+  personChecking: 'Sprawdzanie…',
+  personChoose: 'Znaleziono kilka osób. Wybierz jedną:',
+  personTooMany: 'Pokazano 10 pierwszych osób. Wpisz dokładniejsze imię i nazwisko.',
 
   launcherLabel: 'Dziś:',
   launcherRange: 'Zakres:',

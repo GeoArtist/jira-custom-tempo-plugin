@@ -10,6 +10,11 @@ import { applyTotal, clear, el } from './dom';
 export interface Table {
   element: HTMLElement;
   render(rows: TicketRow[], period: Period, timeZone: string, summary: PeriodSummary): void;
+  /**
+   * Removes every row and shows the total as not known yet. Used when the person changes:
+   * rows of one person must never stand under the name of another (002 FR-003).
+   */
+  clear(): void;
   /** A load is running: a spinner covers the table area; what is shown stays (FR-060). */
   showLoading(): void;
   /** The load failed. With `keepRows` the last data stays visible under the message. */
@@ -49,6 +54,9 @@ export function sortRows(rows: TicketRow[], column: SortColumn, direction: SortD
   const sign = direction === 'ascending' ? 1 : -1;
   return [...rows].sort((a, b) => sign * COMPARATORS[column](a, b));
 }
+
+/** Shown in place of the total while it is not known. */
+const PENDING = '…';
 
 /** Nothing loaded: a zero total in the muted colour. */
 const EMPTY = { totalSeconds: 0, colour: null } as PeriodSummary;
@@ -175,6 +183,15 @@ export function createTable(): Table {
       setBusy(false);
       scroll.hidden = rows.length === 0;
       setMessage(rows.length > 0 ? null : 'empty');
+    },
+    clear() {
+      shown = null;
+      renderBody();
+      total.textContent = PENDING;
+      applyTotal(total, null);
+      applyTotal(totalLabel, null);
+      scroll.hidden = true;
+      setMessage(null);
     },
     showLoading() {
       setBusy(true);

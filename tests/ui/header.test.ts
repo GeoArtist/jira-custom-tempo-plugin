@@ -74,8 +74,8 @@ describe('header', () => {
     const { header } = build();
     header.update(today, summarise(rows(6 * 3600), today));
     expect(header.element.querySelector('.wt-title')?.textContent).toBe('Piątek 06-11-2026 · 6h 00m');
-    // The title stands alone: there is no line of text under it.
-    expect(header.element.querySelector('.wt-header__text')?.children).toHaveLength(1);
+    // The name line and the title: there is no line of text under them.
+    expect(header.element.querySelector('.wt-header__text')?.children).toHaveLength(2);
   });
 
   it('mutes a total of zero and shows a pending total without a colour', () => {
@@ -146,5 +146,46 @@ describe('header', () => {
     header.focus();
     expect(document.activeElement).toBe(close);
     header.element.remove();
+  });
+
+  it('names the person on a line of its own above the title', () => {
+    const { header } = build();
+    const text = header.element.querySelector('.wt-header__text') as HTMLElement;
+    const person = text.querySelector('.wt-person') as HTMLElement;
+    const title = text.querySelector('h1') as HTMLElement;
+
+    // A sibling before the heading, not a part of it.
+    expect([...text.children]).toEqual([person, title]);
+    expect(title.contains(person)).toBe(false);
+    expect(person.tagName).toBe('P');
+
+    header.setPerson('Jan Kowalski');
+    expect(person.textContent).toBe('Jan Kowalski');
+    // The whole name is the tip, for when the line is cut short.
+    expect(person.title).toBe('Jan Kowalski');
+
+    header.update(today, summarise(rows(3600), today));
+    expect(person.textContent).toBe('Jan Kowalski');
+    expect(title.textContent).toBe('Piątek 06-11-2026 · 1h 00m');
+  });
+
+  it('keeps the name line in place when there is no name', () => {
+    const { header } = build();
+    header.setPerson('Anna Nowak');
+    header.setPerson('');
+    const person = header.element.querySelector('.wt-person') as HTMLElement;
+    expect(person.isConnected || header.element.contains(person)).toBe(true);
+    expect(person.textContent).toBe('');
+    expect(person.hasAttribute('title')).toBe(false);
+    expect(person.hidden).toBe(false);
+  });
+
+  it('leaves the action buttons as they were', () => {
+    const { header } = build();
+    header.setPerson('Maksymilian Aleksander Konstanty Brzeczyszczykiewicz-Wolski');
+    const labels = [...header.element.querySelectorAll('.wt-header__actions button')].map(
+      (button) => button.getAttribute('aria-label') ?? button.textContent,
+    );
+    expect(labels).toEqual(['Cofnij', 'Ponów', 'Odśwież', 'Ustawienia', 'Minimalizuj', 'Zamknij']);
   });
 });

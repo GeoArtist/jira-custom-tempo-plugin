@@ -1,9 +1,14 @@
 // Replaces src/jira/session-gateway.ts in demo builds (see vite.config.ts). It answers like
 // Jira from data chosen by the page address:
 //   ?scenario=today|empty|error|long-title|h4|h8|h20|week|month|refresh-changes|signed-out
+//             |long-name      (the signed-in user has a very long name)
+//             |people-many    (12 more people named Kowalski, for the list of people)
+//             |people-offline (the search of people fails)
 //             |showcase   (a whole year of plausible work, for the screenshots of the README)
 //   &delay=<ms>    how long each fake Jira request takes
 // With refresh-changes, 30 more minutes appear once the test sets window.__moreLogged.
+// Every scenario knows a few colleagues, so the time of another person can be shown
+// (specs/002-other-user-worktime/quickstart.md, "Test data").
 // The tests fix the browser clock at Friday 6 November 2026, 12:00 in Warsaw.
 import { HttpError, type GatewayResponse, type JiraGateway, type Session } from '../../src/jira/gateway';
 
@@ -36,6 +41,9 @@ declare global {
 }
 
 const ME = 'me';
+/** Two colleagues with time logged on 6 November 2026. */
+const ANNA = 'anna-1';
+const PIOTR = 'piotr-1';
 const params = new URLSearchParams(location.search);
 const scenarioName = params.get('scenario') ?? 'today';
 
@@ -54,6 +62,9 @@ function log(issueId: string, day: number, time: string, minutes: number, accoun
     timeSpentSeconds: minutes * 60,
   };
 }
+
+/** A name of about 60 characters, for the header and the launcher at their narrowest. */
+const LONG_NAME = 'Maksymilian Aleksander Konstanty Brzeczyszczykiewicz-Wolski';
 
 const LONG_WORD = 'Superdlugaidentyfikacjabezzadnychspacjiktoramusisiezlamac'.repeat(5).slice(0, 255);
 
@@ -79,6 +90,10 @@ function today(): Scenario {
       log('2', 5, '09:00', 30),
       log('3', 3, '08:00', 240),
       log('1', 2, '08:00', 480),
+      // Colleagues: Anna Nowak 6h 00m on two tickets, Piotr Nowakowski 1h 30m.
+      log('1', 6, '08:00', 240, ANNA),
+      log('3', 6, '13:00', 120, ANNA),
+      log('2', 6, '09:00', 90, PIOTR),
     ],
   };
 }
@@ -202,6 +217,88 @@ function scenario(name: string): Scenario {
   }
 }
 
+// ---------------------------------------------------------------- people
+
+/** A user as Jira describes one; only the fields the add-on reads, and a picture it must not load. */
+interface FakeUser {
+  accountId: string;
+  accountType: 'atlassian' | 'app';
+  displayName: string;
+  active: boolean;
+  /** Empty when the person hides the address, as Jira sends it. */
+  emailAddress: string;
+  avatarUrls: Record<string, string>;
+}
+
+const person = (
+  accountId: string,
+  displayName: string,
+  emailAddress = '',
+  extra: Partial<FakeUser> = {},
+): FakeUser => ({
+  accountId,
+  accountType: 'atlassian',
+  displayName,
+  active: true,
+  emailAddress,
+  // The add-on shows no pictures: a request to this address would fail a test.
+  avatarUrls: { '48x48': `https://avatars.invalid/${accountId}/48` },
+  ...extra,
+});
+
+function people(): FakeUser[] {
+  const all = [
+    person(ME, scenarioName === 'long-name' ? LONG_NAME : 'Jan Kowalski', 'jan.kowalski@example.com'),
+    person(ANNA, 'Anna Nowak', 'anna.nowak@example.com'),
+    person('anna-2', 'Anna Nowak', 'a.nowak@example.com'),
+    person(PIOTR, 'Piotr Nowakowski'),
+    person('jozef-1', 'Józef Śliwiński'),
+    person('long-1', 'Aleksandra Konstancja Brzeczyszczykiewicz'),
+    person('marta-1', 'Marta Zielińska', '', { active: false }),
+    person('bot-1', 'Worklog Bot', '', { accountType: 'app' }),
+  ];
+  if (scenarioName === 'people-many') {
+    const first = [
+      'Adam',
+      'Barbara',
+      'Celina',
+      'Dawid',
+      'Ewa',
+      'Filip',
+      'Grażyna',
+      'Henryk',
+      'Iga',
+      'Jakub',
+      'Kinga',
+      'Lech',
+    ];
+    all.push(...first.map((name, index) => person(`kowalski-${index}`, `${name} Kowalski`)));
+  }
+  return all;
+}
+
+/** As Jira compares names: no letter case and no diacritical marks. */
+const fold = (text: string): string =>
+  text.trim().replace(/\s+/g, ' ').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replaceAll('ł', 'l');
+
+/** Jira finds active users whose name, a word of it, or a part of the e-mail address begins with the text. */
+function findUsers(query: string): FakeUser[] {
+  const wanted = fold(query);
+  if (wanted === '') return [];
+  return people().filter((user) => {
+    if (!user.active) return false;
+    const name = fold(user.displayName);
+    const words = [...name.split(' '), ...fold(user.emailAddress).split(/[@.]/)];
+    return name.startsWith(wanted) || words.some((word) => word !== '' && word.startsWith(wanted));
+  });
+}
+
+/** The account the search asks for: null for the signed-in user or for no author at all. */
+function otherAuthor(path: string): string | null {
+  const jql = new URLSearchParams(path.split('?')[1] ?? '').get('jql') ?? '';
+  return /worklogAuthor = "([^"]+)"/.exec(jql)?.[1] ?? null;
+}
+
 function reply(status: number, json: unknown = {}): GatewayResponse {
   return { status, headers: { get: () => null }, json: async () => json };
 }
@@ -220,7 +317,24 @@ export function createGateway(): JiraGateway {
       if (path.startsWith('/rest/api/3/search/jql')) {
         nextLogId = 1;
         current = scenario(scenarioName);
-        return reply(200, { issues: current.issues, isLast: true });
+        // Another person: only the tickets they logged time on, as Jira answers.
+        const author = otherAuthor(path);
+        const issues = author
+          ? current.issues.filter((item) =>
+              current.logs.some((entry) => entry.issueId === item.id && entry.author.accountId === author),
+            )
+          : current.issues;
+        return reply(200, { issues, isLast: true });
+      }
+
+      if (path.startsWith('/rest/api/3/user/search')) {
+        if (scenarioName === 'people-offline') return reply(500);
+        return reply(200, findUsers(new URLSearchParams(path.split('?')[1] ?? '').get('query') ?? ''));
+      }
+      if (path.startsWith('/rest/api/3/user?')) {
+        const accountId = new URLSearchParams(path.split('?')[1] ?? '').get('accountId');
+        const user = people().find((candidate) => candidate.accountId === accountId);
+        return user ? reply(200, user) : reply(404);
       }
 
       const match = /\/issue\/([^/]+)\/worklog\?startedAfter=(-?\d+)&startedBefore=(-?\d+)/.exec(path);
@@ -237,7 +351,12 @@ export function createGateway(): JiraGateway {
 
     async getSession(): Promise<Session> {
       if (scenarioName === 'signed-out') throw new HttpError(401, '/rest/api/3/myself');
-      return { accountId: ME, timeZone: 'Europe/Warsaw', siteUrl: 'https://example.atlassian.net' };
+      return {
+        accountId: ME,
+        displayName: scenarioName === 'long-name' ? LONG_NAME : 'Jan Kowalski',
+        timeZone: 'Europe/Warsaw',
+        siteUrl: 'https://example.atlassian.net',
+      };
     },
   };
 }

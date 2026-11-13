@@ -64,7 +64,9 @@ the old key once to migrate. No migration exists in this version.
 
 ## Scope of the data
 
-- Contains no personal data and no Jira data.
+- Contains no Jira data. Since feature 002 it can hold the account ID and the name of one
+  other person, the one whose time was shown last (`lastPerson`); see
+  [the storage contract of 002](../../002-other-user-worktime/contracts/settings-storage.md).
 - Never sent anywhere.
 - The add-on reads and writes this one key only; it does not touch anything else in the Jira
   site's storage.

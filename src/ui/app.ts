@@ -1,4 +1,5 @@
 // Composes the whole add-on on a Jira page: the launcher and the panel it opens.
+import type { Person } from '../domain/person';
 import { presetPeriod } from '../domain/period';
 import {
   browserStorage,
@@ -10,11 +11,12 @@ import {
 } from '../domain/settings';
 import { summarise } from '../domain/summary';
 import type { JiraGateway, Session } from '../jira/gateway';
+import { findPeople, getPerson } from '../jira/people-finder';
 import { loadPeriod } from '../jira/worklog-loader';
 import { Controller, type Timers } from './controller';
 import { el } from './dom';
 import { createHeader } from './header';
-import { clampLauncher, createLauncher } from './launcher';
+import { clampLauncher, createLauncher, fitLauncher } from './launcher';
 import { createPeriodBar } from './period-bar';
 import { createProgress } from './progress';
 import { createResizeHandles } from './resize';
@@ -71,6 +73,12 @@ export async function mountApp(
   }
 
   let settings: UserSettings = readSettings(storage);
+
+  // Whose time is shown. It lives here only and is never stored: every page load starts on
+  // the signed-in user (002 FR-027, FR-032).
+  const self: Person = { accountId: session.accountId, displayName: session.displayName };
+  let choice: { mode: 'current' | 'other'; person: Person } = { mode: 'current', person: self };
+  const isSelf = (): boolean => choice.person.accountId === self.accountId;
   const root = el('div', { class: 'wt-root' });
   applyTheme(settings.theme, root);
 
@@ -91,12 +99,32 @@ export async function mountApp(
     scope: root,
     themeTarget: root,
     getSettings: () => settings,
-    onSave: (next) => {
+    getChoice: () => (choice.mode === 'other' ? { mode: 'other', person: choice.person } : { mode: 'current' }),
+    findPeople: (text, signal) => findPeople(gateway, text, { signal }),
+    getPerson: (accountId, signal) => getPerson(gateway, accountId, { signal }),
+    onSave: (next, wanted) => {
+      const person = wanted.mode === 'other' ? wanted.person : self;
+      const changed = person.accountId !== choice.person.accountId;
+      // The last other person is remembered, never the user themself (002 FR-035).
+      const remember = wanted.mode === 'other' && person.accountId !== self.accountId;
       // The size and the launcher's place are not edited in the pop-over: keep the newest.
-      settings = { ...settings, refreshMinutes: next.refreshMinutes, theme: next.theme };
+      settings = {
+        ...settings,
+        refreshMinutes: next.refreshMinutes,
+        theme: next.theme,
+        lastPerson: remember ? { accountId: person.accountId, displayName: person.displayName } : settings.lastPerson,
+      };
       applyTheme(next.theme, root);
       controller().setRefreshMinutes(next.refreshMinutes);
       scheduleLauncher();
+      choice = { mode: wanted.mode, person };
+      showPerson();
+      if (changed) {
+        // The name and the emptied table change together (002 FR-040); the launcher never
+        // keeps the total of the person before (002 FR-041).
+        launcher.showPending(controller().period);
+        void controller().setPerson(person);
+      }
       return writeSettings(storage, settings);
     },
   });
@@ -147,6 +175,14 @@ export async function mountApp(
   }
   if (settings.launcher) placeLauncher(settings.launcher);
 
+  /** The name in the header, and on the launcher for anybody but the signed-in user. */
+  function showPerson(): void {
+    header.setPerson(choice.person.displayName);
+    launcher.setPerson(isSelf() ? null : choice.person.displayName);
+    // A name makes the launcher wider: it must not leave the window (002 FR-034).
+    keepLauncherInside();
+  }
+
   // The launcher comes first: the panel is positioned against it, and an anchor has to
   // precede the element that hangs on it.
   root.append(launcher.element, panel);
@@ -163,6 +199,7 @@ export async function mountApp(
   refs.controller = new Controller({
     gateway,
     session,
+    person: self,
     header,
     table,
     progress,
@@ -172,7 +209,11 @@ export async function mountApp(
     timers,
     doc,
     // The launcher shows the period the panel is on, from the panel's own loads (FR-040).
-    onLoaded: (period, summary) => launcher.show(summary, period),
+    onLoaded: (period, summary) => {
+      launcher.show(summary, period);
+      // With a name the launcher is wide, and a longer total must not push it out.
+      if (!isSelf()) keepLauncherInside();
+    },
     onFailed: (period) => launcher.showError(period),
   });
   controller().setActive(false);
@@ -210,10 +251,19 @@ export async function mountApp(
   function close(): void {
     if (!isOpen()) return;
     const wasToday = controller().period.preset === 'today';
+    const wasOther = !isSelf();
     minimise();
     startOnToday = true;
+    // The close button also forgets the chosen person (002 FR-028).
+    choice = { mode: 'current', person: self };
+    if (wasOther) {
+      // Nothing of the other person may wait in the hidden panel for the next opening.
+      controller().reset(self);
+      showPerson();
+      launcher.showPending(presetPeriod('today', session.timeZone, now()));
+    }
     // The launcher goes back to today with the panel's period forgotten.
-    if (!wasToday) void loadToday();
+    if (!wasToday || wasOther) void loadToday();
   }
 
   // ------------------------------------------------- the total on the launcher
@@ -275,10 +325,18 @@ export async function mountApp(
 
   // A smaller window must not leave a moved launcher outside it.
   function keepLauncherInside(): void {
-    if (settings.launcher) placeLauncher(clampLauncher(settings.launcher, launcher.element));
+    if (settings.launcher) {
+      placeLauncher(clampLauncher(settings.launcher, launcher.element));
+    } else {
+      // The default corner, unless the launcher has grown too wide for it there.
+      root.style.removeProperty('--wt-launcher-right');
+      root.style.removeProperty('--wt-launcher-bottom');
+      const fitted = fitLauncher(launcher.element);
+      if (fitted) placeLauncher(fitted);
+    }
     if (isOpen()) resize.sync();
   }
-  keepLauncherInside();
+  showPerson();
   globalThis.addEventListener?.('resize', keepLauncherInside);
   await loadToday();
 

@@ -1,6 +1,7 @@
 // The small button that stays on every Jira page: the total of the period the panel is on
 // (today until the user selects another one), in the progress colour. Activating it opens
-// the panel (FR-040). The user can drag it anywhere in the window (FR-072).
+// the panel (FR-040). The user can drag it anywhere in the window (FR-072). While the time
+// of another person is shown, their name stands before the label (002 FR-033).
 import { formatDuration, formatLauncherLabel } from '../domain/format';
 import type { Period } from '../domain/period';
 import type { LauncherPosition } from '../domain/settings';
@@ -19,6 +20,13 @@ export interface LauncherOptions {
 
 export interface Launcher {
   element: HTMLButtonElement;
+  /**
+   * The name of another person, before the label; null for the signed-in user, whose
+   * launcher carries no name (002 FR-033).
+   */
+  setPerson(name: string | null): void;
+  /** The total of the period is not known yet: never the total of somebody else (002 FR-041). */
+  showPending(period: Period): void;
   /** Shows the total of the period, coloured like the progress bar, with the period's label. */
   show(summary: PeriodSummary, period: Period): void;
   /** The total could not be read; the panel explains why when it is opened. */
@@ -29,12 +37,27 @@ export interface Launcher {
 
 /** Shown in place of the total before the first load and after a failed one. */
 const NO_VALUE = '–';
+/** Stands between the name of another person and the label. */
+const SEPARATOR = '·';
 /** A press that travels less than this is a click, not a drag. */
 const DRAG_THRESHOLD = 4;
 /** One press of Shift + an arrow key. */
 const KEY_STEP = 16;
 /** The room kept between the launcher and the window edge. */
 export const LAUNCHER_MARGIN = 4;
+
+/**
+ * The launcher stands in its default corner and has grown out of the window (a long name
+ * in a narrow window): the nearest place wholly inside it. Null when it fits, and on a
+ * page without layout.
+ */
+export function fitLauncher(element: HTMLElement): LauncherPosition | null {
+  const view = element.ownerDocument.documentElement;
+  if (view.clientWidth <= 0 || view.clientHeight <= 0) return null;
+  const now = currentPosition(element);
+  const inside = clampLauncher(now, element);
+  return inside.right === Math.round(now.right) && inside.bottom === Math.round(now.bottom) ? null : inside;
+}
 
 /** Keeps the whole launcher inside the window. */
 export function clampLauncher(position: LauncherPosition, element: HTMLElement): LauncherPosition {
@@ -59,6 +82,9 @@ function currentPosition(element: HTMLElement): LauncherPosition {
 export function createLauncher(options: LauncherOptions): Launcher {
   const total = el('span', { class: 'wt-total', text: NO_VALUE });
   const label = el('span', { class: 'wt-launcher__label', text: `${pl.launcherLabel} ` });
+  // Both are empty and hidden for the signed-in user, so the launcher reads as before.
+  const person = el('span', { class: 'wt-launcher__person', attrs: { hidden: true } });
+  const separator = el('span', { class: 'wt-launcher__sep', attrs: { hidden: true, 'aria-hidden': 'true' } });
   const element = el(
     'button',
     {
@@ -72,11 +98,20 @@ export function createLauncher(options: LauncherOptions): Launcher {
         },
       },
     },
-    [el('span', { class: 'wt-launcher__dot', attrs: { 'aria-hidden': 'true' } }), label, total],
+    [el('span', { class: 'wt-launcher__dot', attrs: { 'aria-hidden': 'true' } }), person, separator, label, total],
   );
   element.setAttribute('aria-description', pl.launcherMove);
 
   let dragged = false;
+  let personName: string | null = null;
+  let failed = false;
+
+  /** The tip: why there is no total, else the whole name behind an ellipsis (002 FR-034). */
+  function showTip(): void {
+    if (failed) element.setAttribute('title', pl.error);
+    else if (personName) element.setAttribute('title', personName);
+    else element.removeAttribute('title');
+  }
   let drag: { pointerId: number; x: number; y: number; start: LauncherPosition; moving: boolean } | null = null;
 
   const moveTo = (position: LauncherPosition, done: boolean): void =>
@@ -136,18 +171,36 @@ export function createLauncher(options: LauncherOptions): Launcher {
 
   return {
     element,
+    setPerson(name) {
+      personName = name;
+      // The trailing spaces make the text of the button read as one sentence.
+      person.textContent = name ? `${name} ` : '';
+      separator.textContent = name ? `${SEPARATOR} ` : '';
+      person.hidden = !name;
+      separator.hidden = !name;
+      showTip();
+    },
+    showPending(period) {
+      label.textContent = `${formatLauncherLabel(period)} `;
+      total.textContent = NO_VALUE;
+      applyTotal(element, null);
+      failed = false;
+      showTip();
+    },
     show(summary, period) {
       label.textContent = `${formatLauncherLabel(period)} `;
       total.textContent = formatDuration(summary.totalSeconds);
       // Set on the button so that the dot and the total share one colour.
       applyTotal(element, summary);
-      element.removeAttribute('title');
+      failed = false;
+      showTip();
     },
     showError(period) {
       label.textContent = `${formatLauncherLabel(period)} `;
       total.textContent = NO_VALUE;
       applyTotal(element, null);
-      element.setAttribute('title', pl.error);
+      failed = true;
+      showTip();
     },
     setExpanded(expanded) {
       element.setAttribute('aria-expanded', String(expanded));

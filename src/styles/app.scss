@@ -200,6 +200,9 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   font-weight: var(--wt-weight-medium);
   white-space: nowrap;
   cursor: pointer;
+  // With the name of another person the launcher gets wider, but never wider than the
+  // window: the name gives way, the label and the total do not (002 FR-034).
+  max-width: calc(100vw - 2 * var(--wt-space-1));
   anchor-name: --wt-launcher;
   // A drag moves the launcher and must not scroll the page or select its text. No text
   // cursor is drawn in it either, whatever the browser's caret settings (FR-074).
@@ -216,6 +219,28 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   &--dragging {
     cursor: grabbing;
   }
+}
+
+.wt-launcher__dot,
+.wt-launcher__sep,
+.wt-launcher__label,
+.wt-launcher > .wt-total {
+  flex: none;
+}
+
+// The name of another person, in the colour it has in the header (002 FR-033). It is the
+// only part that is cut short.
+.wt-launcher__person {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: var(--wt-launcher-name-max);
+  overflow: hidden;
+  color: var(--wt-person);
+  text-overflow: ellipsis;
+}
+
+.wt-launcher__sep {
+  color: var(--wt-text-muted);
 }
 
 // The dot repeats the colour of the total; both read the tone set on the button.
@@ -255,6 +280,30 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   flex: none;
   gap: var(--wt-space-2);
   margin-left: auto;
+
+  @media (max-width: $narrow) {
+    // Six buttons of the touch size, with the usual gap, are wider than the narrowest panel:
+    // the last one was cut by its edge. They take a line of their own, reach a little into
+    // the padding at both sides, and share out what room there is.
+    flex: 1 1 100%;
+    justify-content: space-between;
+    gap: var(--wt-space-1);
+    margin-inline: calc(-1 * var(--wt-space-1));
+  }
+}
+
+// Whose time is shown: a line of its own above the title (002 FR-006). It keeps its height
+// when it is empty, so the header does not jump, and is cut short on one line when the
+// name is longer than the room beside the buttons.
+.wt-person {
+  overflow: hidden;
+  min-height: 1.4em;
+  color: var(--wt-person);
+  font-size: var(--wt-text-sm);
+  font-weight: var(--wt-weight-medium);
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wt-title {
@@ -1090,11 +1139,18 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
 // ---------------------------------------------------------------- settings
 
 .wt-popover {
+  --wt-popover-top: 60px;
+
   position: absolute;
-  top: 60px;
+  top: var(--wt-popover-top);
   right: var(--wt-space-4);
   z-index: 2;
+  display: flex;
+  flex-direction: column;
   width: min(320px, calc(100% - 2 * var(--wt-space-4)));
+  // Never taller than the room the panel has under the header: with a list of people the
+  // list gives way first, then the settings scroll, and the buttons stay in view (002 FR-044).
+  max-height: calc(100cqh - var(--wt-popover-top) - var(--wt-space-2));
   padding: var(--wt-space-4);
   border: var(--wt-line) solid var(--wt-border);
   border-radius: var(--wt-radius-md);
@@ -1102,10 +1158,28 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   box-shadow: var(--wt-shadow);
 
   @media (max-width: $narrow) {
-    top: 64px;
+    --wt-popover-top: 64px;
+
     right: var(--wt-space-2);
     left: var(--wt-space-2);
     width: auto;
+  }
+}
+
+// Everything of the settings. It scrolls when the panel is too low for it; the margin and
+// the padding leave room for the focus ring of a control at its edge.
+.wt-popover__content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: calc(-1 * var(--wt-space-1));
+  padding: var(--wt-space-1);
+  overflow-y: auto;
+  // A control that takes the focus is not left under the two buttons at the foot.
+  scroll-padding-bottom: calc(var(--wt-touch) + 2 * var(--wt-space-2));
+
+  > * {
+    flex: none;
   }
 }
 
@@ -1130,11 +1204,233 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   font-size: var(--wt-text-sm);
 }
 
+// The two buttons stay at the foot of the settings when what is above them scrolls.
 .wt-popover__actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   display: flex;
   justify-content: flex-end;
   gap: var(--wt-space-2);
-  margin-top: var(--wt-space-4);
+  margin: var(--wt-space-2) 0 calc(-1 * var(--wt-space-1));
+  padding: var(--wt-space-2) 0 var(--wt-space-1);
+  background: var(--wt-surface);
+}
+
+// ---------------------------------------------------------------- whose time is shown
+
+// The two options, one below the other (002 FR-011).
+.wt-popover__group {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--wt-space-2);
+  font-size: var(--wt-text-sm);
+}
+
+.wt-radio {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--wt-space-2);
+  min-height: var(--wt-control);
+  cursor: pointer;
+
+  @include base.touch-size {
+    min-height: var(--wt-touch);
+  }
+}
+
+// The real radio button lies over the whole line, unseen: the line is the touch target,
+// and the keyboard and assistive technology still meet a native control.
+.wt-radio__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+// What the eye sees of it: a ring, filled when the option is selected.
+.wt-radio__mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.2em;
+  height: 1.2em;
+  border: calc(2 * var(--wt-line)) solid var(--wt-text-muted);
+  border-radius: 50%;
+
+  &::after {
+    content: '';
+    width: 0.55em;
+    height: 0.55em;
+    border-radius: 50%;
+  }
+}
+
+.wt-radio__input:checked + .wt-radio__mark {
+  border-color: var(--wt-focus);
+
+  &::after {
+    background: var(--wt-focus);
+  }
+}
+
+.wt-radio__input:focus-visible + .wt-radio__mark {
+  outline: 2px solid var(--wt-focus);
+  outline-offset: 2px;
+}
+
+.wt-radio__input:disabled + .wt-radio__mark {
+  opacity: 0.6;
+}
+
+// The label and the field share a line and wrap when the pop-over is narrow.
+.wt-popover__row--person {
+  flex-wrap: wrap;
+  margin-top: var(--wt-space-1);
+
+  label {
+    white-space: nowrap;
+  }
+}
+
+.wt-input--name {
+  flex: 1;
+  min-width: 0;
+}
+
+// While a check runs "save" cannot be used again (002 FR-019). It is not `disabled`, so
+// the keyboard focus stays on it.
+.wt-button[aria-disabled='true'] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+// The people a name fits, for the user to pick one (002 FR-030). It is the one part of the
+// settings that gets lower when the panel has little room.
+.wt-popover__content > .wt-people {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: var(--wt-space-3);
+  font-size: var(--wt-text-sm);
+
+  > * {
+    flex: none;
+  }
+}
+
+.wt-people__title,
+.wt-people__more {
+  color: var(--wt-text-muted);
+}
+
+.wt-people__more {
+  margin-top: var(--wt-space-2);
+}
+
+// About five entries; more scroll inside the list, so the buttons below stay near. In a low
+// panel it shrinks, down to one entry.
+.wt-popover__content > .wt-people > .wt-people__list {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  gap: var(--wt-space-1);
+  min-height: calc(var(--wt-control) + 2 * var(--wt-space-1));
+  max-height: var(--wt-list-max-height);
+  margin-top: var(--wt-space-2);
+  // Room for the focus ring of an entry at the edge.
+  padding: var(--wt-space-1);
+  overflow-y: auto;
+  list-style: none;
+
+  @include base.touch-size {
+    min-height: calc(var(--wt-touch) + 2 * var(--wt-space-1));
+  }
+
+  > * {
+    flex: none;
+  }
+}
+
+.wt-people__option {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--wt-control);
+  padding: var(--wt-space-1) var(--wt-space-3);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-md);
+  background: var(--wt-surface-raised);
+  color: var(--wt-text);
+  font: inherit;
+  font-size: var(--wt-text-sm);
+  text-align: left;
+  cursor: pointer;
+
+  @include base.touch-size {
+    min-height: var(--wt-touch);
+  }
+
+  @include base.hover {
+    border-color: var(--wt-accent);
+    background: var(--wt-hover);
+  }
+}
+
+.wt-people__name,
+.wt-people__email {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wt-people__email {
+  color: var(--wt-text-muted);
+  font-size: var(--wt-text-xs);
+}
+
+// The alert window: a small box in the middle of the settings, on a dimmed layer that
+// covers the settings and nothing else (002 FR-020).
+.wt-alert {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wt-space-3);
+  border-radius: inherit;
+  background: var(--wt-scrim);
+}
+
+.wt-alert__box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wt-space-3);
+  width: min(var(--wt-alert-width), 100%);
+  padding: var(--wt-space-4);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-md);
+  background: var(--wt-surface);
+  box-shadow: var(--wt-shadow);
+  font-size: var(--wt-text-sm);
+}
+
+.wt-alert__text {
+  overflow-wrap: anywhere;
+  // A text of two sentences has the second on a line of its own (002 FR-020).
+  white-space: pre-line;
+}
+
+.wt-alert__ok {
+  align-self: flex-end;
 }
 
 // The theme switch: a pill with the sun on the left and the moon on the right. A round

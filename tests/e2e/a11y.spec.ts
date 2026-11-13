@@ -28,6 +28,21 @@ test('touch targets are at least 44 × 44 on a phone', async ({ page }, testInfo
   await page.getByRole('button', { name: 'Ustawienia' }).click();
   await expect(page.locator('.wt-popover')).toBeVisible();
   expect(await tooSmall(page)).toEqual([]);
+
+  // The choice of another person: the two options, the name field, the list of people,
+  // and the "OK" of the alert window (002 FR-015).
+  await page.getByRole('radio', { name: 'Inny użytkownik' }).check();
+  await expect(page.locator('#wt-person-name')).toBeVisible();
+  expect(await tooSmall(page)).toEqual([]);
+  await page.locator('#wt-person-name').fill('Nowak');
+  await page.locator('.wt-popover__actions .wt-button--primary').click();
+  await expect(page.locator('.wt-people__option')).toHaveCount(3);
+  expect(await tooSmall(page)).toEqual([]);
+  await page.locator('#wt-person-name').fill('Jan Nieistniejący');
+  await page.locator('.wt-popover__actions .wt-button--primary').click();
+  await expect(page.getByRole('alertdialog')).toBeVisible();
+  const ok = await page.getByRole('alertdialog').getByRole('button', { name: 'OK' }).boundingBox();
+  expect(ok && ok.width >= 44 && ok.height >= 44).toBe(true);
 });
 
 test('every control is reachable by keyboard and shows a focus ring', async ({ page }) => {
@@ -87,4 +102,67 @@ test('the add-on can be used with the keyboard alone', async ({ page }) => {
   await expect(launcher(page)).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(panel(page)).toBeVisible();
+});
+
+test('the choice of another person is named for assistive technology and works by keyboard', async ({ page }) => {
+  await openPanel(page);
+  await page.getByRole('button', { name: 'Ustawienia' }).click();
+
+  // One named group of two radio buttons (002 FR-043).
+  const group = page.getByRole('radiogroup', { name: 'Użytkownik' });
+  await expect(group.getByRole('radio')).toHaveCount(2);
+  await expect(group.getByRole('radio', { name: 'Obecny użytkownik' })).toBeChecked();
+
+  await group.getByRole('radio', { name: 'Inny użytkownik' }).check();
+  const field = page.getByRole('textbox', { name: 'Imię i nazwisko' });
+  await expect(field).toBeFocused();
+  await field.fill('Nowak');
+  await page.keyboard.press('Enter');
+
+  // The list is a group named by its heading line; Tab walks it, Enter picks.
+  const list = page.getByRole('group', { name: 'Znaleziono kilka osób. Wybierz jedną:' });
+  const entries = list.getByRole('button');
+  await expect(entries).toHaveCount(3);
+  for (const entry of await entries.all()) {
+    await expect(entry).toBeFocused();
+    await page.keyboard.press('Tab');
+  }
+  await page.keyboard.press('Shift+Tab');
+  await expect(entries.last()).toBeFocused();
+  expect(await entries.last().evaluate((node) => getComputedStyle(node).outlineStyle)).not.toBe('none');
+  await page.keyboard.press('Enter');
+  await expect(field).toHaveValue('Piotr Nowakowski');
+  const save = page.locator('.wt-popover__actions .wt-button--primary');
+  await expect(save).toBeFocused();
+
+  // A name nobody has: the alert is announced with its text and holds the focus.
+  await field.fill('Jan Nieistniejący');
+  await page.keyboard.press('Enter');
+  const alert = page.getByRole('alertdialog', { name: 'Nie znaleziono użytkownika. Nie można zapisać ustawień.' });
+  await expect(alert).toBeVisible();
+  await expect(alert.getByRole('button', { name: 'OK' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(alert).toBeHidden();
+  await expect(field).toBeFocused();
+});
+
+test('"Zapisz" says that it is checking while Jira is asked', async ({ page }) => {
+  await openPanel(page, { delay: 400 });
+  await expect(rows(page)).toHaveCount(3);
+  await page.getByRole('button', { name: 'Ustawienia' }).click();
+  await page.getByRole('radio', { name: 'Inny użytkownik' }).check();
+  await page.locator('#wt-person-name').fill('Piotr Nowakowski');
+  const save = page.locator('.wt-popover__actions .wt-button--primary');
+  await save.click();
+
+  await expect(save).toHaveAttribute('aria-busy', 'true');
+  await expect(save).toHaveAttribute('aria-disabled', 'true');
+  await expect(save).toHaveAccessibleName('Sprawdzanie…');
+  await expect(page.getByRole('radio', { name: 'Obecny użytkownik' })).toBeDisabled();
+  await expect(page.locator('#wt-person-name')).not.toBeEditable();
+  // The focus did not fall out of the add-on.
+  await expect(save).toBeFocused();
+
+  await expect(page.locator('.wt-popover')).toBeHidden();
+  await expect(page.locator('.wt-person')).toHaveText('Piotr Nowakowski');
 });

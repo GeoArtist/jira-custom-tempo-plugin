@@ -1,7 +1,7 @@
 # Jira Custom Tempo
 
-A browser extension that shows you your own logged work time on Jira Cloud. The interface is
-in Polish.
+A browser extension that shows you your own logged work time on Jira Cloud, or that of a
+colleague you name. The interface is in Polish.
 
 On every Jira page a small button in the bottom-right corner shows today's total ("Dziś:
 10h 10m"). Clicking it opens a panel with one row per ticket, every time entry, the sum per
@@ -65,8 +65,16 @@ the views; the round arrows beside the rows move to the previous and next month.
 - **Back and forward**: "Cofnij" and "Ponów" beside "Odśwież" return to the views you were
   on, up to 10 steps back, without asking Jira again.
 - **Refresh**: "Odśwież" reloads the data. Auto-refresh runs every 5 minutes by default.
-- **Settings** (gear): the auto-refresh interval in minutes (0 turns it off) and the dark /
-  light switch (default dark).
+- **Settings** (gear): the auto-refresh interval in minutes (0 turns it off), the dark /
+  light switch (default dark), and whose time is shown.
+- **Another person**: in the settings choose "Inny użytkownik", type a colleague's first
+  and last name, and press "Zapisz". The name is checked in Jira first: a name nobody has
+  gives an alert and saves nothing; a name several people fit (or a surname alone) gives a
+  list to pick from. The panel then shows that person's time, with their name above the
+  title and on the launcher. Minimising keeps the person; the close button, a reload of
+  the page, and a new tab return to you. The last person you looked at is offered again
+  the next time, so you do not type the name twice. Your own name always stands above the
+  title while your own time is shown.
 
 ## How it works
 
@@ -76,7 +84,7 @@ the views; the round arrows beside the rows move to the previous and next month.
 - It only reads: every request is a `GET`. It asks the browser for no permissions.
 - It draws inside its own isolated element, so it does not change Jira's look, and Jira does
   not change its look.
-- No runtime dependencies and no UI framework. The whole script is about 20 kB gzipped.
+- No runtime dependencies and no UI framework. The whole script is about 24 kB gzipped.
 - Source is TypeScript and SCSS. The toolchain is Vite+ (`vp`), which is mandatory for this
   project.
 
@@ -129,9 +137,13 @@ The browser tests need Chromium once: `npx playwright install chromium`.
 The code, the automated tests, and the size check are complete. The tests load the real built
 extension into Chromium and run it against a faked Jira Cloud address.
 
-It has not yet been tried on a real Jira Cloud site. That is the one open step: checks X1 to
-X6 in `specs/001-worktime-panel/research.md` and the walkthrough in
-`specs/001-worktime-panel/quickstart.md`.
+The installed extension was tried on a real Jira Cloud site on 2026-11-13 for the time of
+another person: a colleague's time is shown and matches Jira to the minute, a surname alone
+finds the person, and a name nobody has gives the alert. The results are in
+`specs/002-other-user-worktime/research.md` (checks X7 to X11; X11, a user without the
+"Browse users and groups" permission, was not checked). Checks X1 to X6 in
+`specs/001-worktime-panel/research.md` and the walkthrough in
+`specs/001-worktime-panel/quickstart.md` have not been recorded one by one yet.
 
 ## Known limits
 
@@ -149,9 +161,24 @@ X6 in `specs/001-worktime-panel/research.md` and the walkthrough in
 - A time entry saved a few seconds ago can be missing from one refresh and appear on the next.
 - The "Od:" and "Do:" fields use the browser's own date-time control, so they follow the
   browser's date format.
+- Another person's time:
+  - You see what Jira lets you see: time logged on tickets you can view. Looking people up
+    needs Jira's "Browse users and groups" permission; without it every name is reported
+    as not found.
+  - Only people with an active account are found. A deactivated account is reported as not
+    found.
+  - A name is found from its beginning or from the beginning of one of its words (a
+    surname alone works), with or without Polish letters. A text from the middle of a word
+    finds nobody.
+  - The list of people shows no pictures, and an e-mail address only where Jira shows it to
+    you. Two people of the same name with hidden addresses look the same in the list.
+  - Days are cut by your own time zone, also for a colleague in another one.
+  - The name and account ID of the last person you looked at are kept in the browser, with
+    the other settings, until you look at someone else or clear the site's data.
 
 ## Project documents
 
-Everything about the feature is in `specs/001-worktime-panel/`: `spec.md` (requirements),
-`plan.md` (design), `research.md` (decisions and open checks), `data-model.md`, `contracts/`,
+Everything about the panel is in `specs/001-worktime-panel/`, and everything about the time
+of another person in `specs/002-other-user-worktime/`: `spec.md` (requirements), `plan.md`
+(design), `research.md` (decisions and open checks), `data-model.md`, `contracts/`,
 `quickstart.md`, and `tasks.md`. Project rules are in `.specify/memory/constitution.md`.

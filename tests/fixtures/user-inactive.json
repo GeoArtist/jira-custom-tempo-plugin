@@ -1,0 +1,13 @@
+{
+  "self": "https://example.atlassian.net/rest/api/3/user?accountId=712020:old-1",
+  "accountId": "712020:old-1",
+  "accountType": "atlassian",
+  "avatarUrls": {
+    "48x48": "https://avatars.example.invalid/48",
+    "24x24": "https://avatars.example.invalid/24"
+  },
+  "displayName": "Marta Nowak",
+  "active": false,
+  "timeZone": "Europe/Warsaw",
+  "emailAddress": ""
+}

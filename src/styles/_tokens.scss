@@ -46,6 +46,9 @@
   --wt-edge: 16px; // distance of the launcher and the panel from the window edge
   --wt-layer: 2147483000; // above everything Jira draws
   --wt-bar-height: 12px;
+  --wt-launcher-name-max: 24ch; // the widest name on the launcher before the ellipsis (002 FR-034)
+  --wt-alert-width: 280px; // the alert window over the settings (002 FR-020)
+  --wt-list-max-height: 220px; // the list of people before it scrolls, about five entries (002 FR-044)
   --wt-line: 1px;
 
   // What a control looks like under the pointer: a tint of the accent on the surface.
@@ -65,6 +68,8 @@
   --wt-text-muted: #9aa3b2;
   --wt-link: #7ab5ff;
   --wt-accent: #2563eb;
+  --wt-person: #ff6c00; // the name of the person whose time is shown (002 FR-007)
+  --wt-scrim: rgb(0 0 0 / 55%); // the dimmed layer under the alert window
   --wt-on-accent: #ffffff;
   --wt-focus: #8ab4ff;
   --wt-danger: #ff8a80;
@@ -102,6 +107,9 @@
   --wt-text-muted: #5a6475;
   --wt-link: #0b5cd7;
   --wt-accent: #0c66e4;
+  // The same orange, darker: #ff6c00 itself has too little contrast on a light surface.
+  --wt-person: #b84e00;
+  --wt-scrim: rgb(23 32 51 / 35%);
   --wt-on-accent: #ffffff;
   --wt-focus: #0c66e4;
   --wt-danger: #b3261e;

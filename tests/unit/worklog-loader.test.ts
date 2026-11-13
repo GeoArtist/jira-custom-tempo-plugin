@@ -20,6 +20,19 @@ describe('buildJql', () => {
     );
     expect(buildJql(today, false)).toBe('worklogDate >= "2026-11-05" AND worklogDate <= "2026-11-07"');
   });
+
+  it('names another person by their account ID in double quotes', () => {
+    expect(buildJql(today, true, '712020:abc-1')).toBe(
+      'worklogAuthor = "712020:abc-1" AND worklogDate >= "2026-11-05" AND worklogDate <= "2026-11-07"',
+    );
+    expect(buildJql(today, false, '712020:abc-1')).toBe('worklogDate >= "2026-11-05" AND worklogDate <= "2026-11-07"');
+  });
+
+  it('never writes an account ID that could change the query', () => {
+    const dates = 'worklogDate >= "2026-11-05" AND worklogDate <= "2026-11-07"';
+    expect(buildJql(today, true, 'x" OR project = "SECRET')).toBe(dates);
+    expect(buildJql(today, true, '')).toBe(dates);
+  });
 });
 
 describe('loadPeriod', () => {
@@ -134,5 +147,38 @@ describe('loadPeriod', () => {
       ['AM-20012', 2700],
       ['AM-10087', 5400],
     ]);
+  });
+});
+
+describe('loadPeriod for another person', () => {
+  const OTHER = 'someone-else';
+
+  it('asks for that person and keeps only their worklogs', async () => {
+    const gateway = new FakeGateway(todayRoutes());
+    const rows = await loadPeriod(gateway, fakeSession, today, { authorId: OTHER });
+
+    expect(gateway.searches()[0]?.query.get('jql')).toBe(buildJql(today, true, OTHER));
+    // The recorded day has one hour by another author on the first ticket.
+    expect(rows.map((row) => [row.ticket.key, row.totalSeconds])).toEqual([['AM-10234', 3600]]);
+  });
+
+  it('keeps `currentUser()` in the query when the person is the signed-in user', async () => {
+    const gateway = new FakeGateway(todayRoutes());
+    await loadPeriod(gateway, fakeSession, today, { authorId: fakeSession.accountId });
+    expect(gateway.searches()[0]?.query.get('jql')).toBe(buildJql(today, true));
+  });
+
+  it('repeats the search without the author when Jira rejects it, with the same result', async () => {
+    const gateway = new FakeGateway(todayRoutes()).add({
+      path: SEARCH,
+      reply: (request) => (request.query.get('jql')?.includes('worklogAuthor') ? { status: 400 } : { json: search }),
+    });
+    const rows = await loadPeriod(gateway, fakeSession, today, { authorId: OTHER });
+
+    expect(gateway.searches().map((request) => request.query.get('jql'))).toEqual([
+      buildJql(today, true, OTHER),
+      buildJql(today, false),
+    ]);
+    expect(rows.map((row) => [row.ticket.key, row.totalSeconds])).toEqual([['AM-10234', 3600]]);
   });
 });

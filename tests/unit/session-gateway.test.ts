@@ -27,16 +27,29 @@ describe('session gateway', () => {
   });
 
   it('describes the signed-in user from the Jira profile', async () => {
-    const { fetchFn, calls } = fakeFetch({ json: { accountId: 'abc', timeZone: 'Europe/Warsaw' } });
+    const { fetchFn, calls } = fakeFetch({
+      json: { accountId: 'abc', displayName: 'Jan Kowalski', timeZone: 'Europe/Warsaw' },
+    });
     const session = await createGateway('https://example.atlassian.net/', fetchFn).getSession();
     expect(calls[0]?.input).toBe('/rest/api/3/myself');
-    expect(session).toEqual({ accountId: 'abc', timeZone: 'Europe/Warsaw', siteUrl: 'https://example.atlassian.net' });
+    expect(session).toEqual({
+      accountId: 'abc',
+      displayName: 'Jan Kowalski',
+      timeZone: 'Europe/Warsaw',
+      siteUrl: 'https://example.atlassian.net',
+    });
   });
 
   it("falls back to the browser's time zone when the profile has none", async () => {
     const { fetchFn } = fakeFetch({ json: { accountId: 'abc' } });
     const session = await createGateway('https://example.atlassian.net', fetchFn).getSession();
     expect(session.timeZone).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  });
+
+  it('has an empty name when the profile gives none', async () => {
+    const { fetchFn } = fakeFetch({ json: { accountId: 'abc' } });
+    const session = await createGateway('https://example.atlassian.net', fetchFn).getSession();
+    expect(session.displayName).toBe('');
   });
 
   it('rejects when nobody is signed in', async () => {

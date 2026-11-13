@@ -1,4 +1,5 @@
-// Title line with the total, and the action buttons: back, forward, refresh, settings,
+// The name of the person whose time is shown (002 FR-006), the title line with the total,
+// and the action buttons: back, forward, refresh, settings,
 // minimise, close (FR-012, FR-013, FR-029, FR-031, FR-041, FR-082, FR-086).
 import { formatDuration, formatTitle } from '../domain/format';
 import type { Period } from '../domain/period';
@@ -21,6 +22,8 @@ export interface Header {
   settingsButton: HTMLButtonElement;
   /** A null summary: the period is still loading, so its total is not known yet. */
   update(period: Period, summary: PeriodSummary | null): void;
+  /** Whose time the panel shows. An empty name leaves the line in place (002 FR-010). */
+  setPerson(name: string): void;
   /** Disables the refresh button and shows the loading indication while a load runs. */
   setBusy(busy: boolean): void;
   /** Which of the back and forward buttons have somewhere to go (FR-082). */
@@ -33,6 +36,8 @@ export interface Header {
 const PENDING = '…';
 
 export function createHeader(options: HeaderOptions): Header {
+  // A line of its own above the title, not a part of the heading.
+  const person = el('p', { class: 'wt-person' });
   const titleText = el('span', { class: 'wt-title__text' });
   const total = el('span', { class: 'wt-total' });
   const title = el('h1', { class: 'wt-title' }, [
@@ -92,7 +97,7 @@ export function createHeader(options: HeaderOptions): Header {
   );
 
   const element = el('header', { class: 'wt-header' }, [
-    el('div', { class: 'wt-header__text' }, [title]),
+    el('div', { class: 'wt-header__text' }, [person, title]),
     el('div', { class: 'wt-header__actions' }, [
       backButton,
       forwardButton,
@@ -110,6 +115,12 @@ export function createHeader(options: HeaderOptions): Header {
       titleText.textContent = formatTitle(period);
       total.textContent = summary ? formatDuration(summary.totalSeconds) : PENDING;
       applyTotal(total, summary);
+    },
+    setPerson(name) {
+      person.textContent = name;
+      // The whole name stays readable when the line is cut short (002 FR-009).
+      if (name) person.title = name;
+      else person.removeAttribute('title');
     },
     focus() {
       closeButton.focus();

@@ -6,7 +6,14 @@ import { createSettingsPopover } from '../../src/ui/settings-popover';
 const theme = () => document.documentElement.getAttribute('data-theme');
 
 function build(
-  initial: UserSettings = { refreshMinutes: 5, theme: 'dark', panelHeight: null, panelWidth: null, launcher: null },
+  initial: UserSettings = {
+    refreshMinutes: 5,
+    theme: 'dark',
+    panelHeight: null,
+    panelWidth: null,
+    launcher: null,
+    lastPerson: null,
+  },
   stored = true,
 ) {
   let settings = initial;
@@ -42,6 +49,7 @@ describe('settings pop-over', () => {
       panelHeight: 500,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
     expect(root.hidden).toBe(true);
     popover.open();
@@ -64,13 +72,17 @@ describe('settings pop-over', () => {
     popover.open();
     interval.value = '15';
     button('Zapisz')?.click();
-    expect(onSave).toHaveBeenCalledWith({
-      refreshMinutes: 15,
-      theme: 'dark',
-      panelHeight: null,
-      panelWidth: null,
-      launcher: null,
-    });
+    expect(onSave).toHaveBeenCalledWith(
+      {
+        refreshMinutes: 15,
+        theme: 'dark',
+        panelHeight: null,
+        panelWidth: null,
+        launcher: null,
+        lastPerson: null,
+      },
+      { mode: 'current' },
+    );
     expect(root.hidden).toBe(true);
     expect(document.activeElement).toBe(anchor);
   });
@@ -80,13 +92,17 @@ describe('settings pop-over', () => {
     popover.open();
     interval.value = '0';
     button('Zapisz')?.click();
-    expect(onSave).toHaveBeenCalledWith({
-      refreshMinutes: 0,
-      theme: 'dark',
-      panelHeight: null,
-      panelWidth: null,
-      launcher: null,
-    });
+    expect(onSave).toHaveBeenCalledWith(
+      {
+        refreshMinutes: 0,
+        theme: 'dark',
+        panelHeight: null,
+        panelWidth: null,
+        launcher: null,
+        lastPerson: null,
+      },
+      { mode: 'current' },
+    );
   });
 
   it.each(['', '-1', '2.5', '1441', 'abc'])('rejects the interval "%s" and stays open', (value) => {
@@ -154,13 +170,17 @@ describe('settings pop-over', () => {
     popover.open();
     themeSwitch.click();
     button('Zapisz')?.click();
-    expect(onSave).toHaveBeenCalledWith({
-      refreshMinutes: 5,
-      theme: 'light',
-      panelHeight: null,
-      panelWidth: null,
-      launcher: null,
-    });
+    expect(onSave).toHaveBeenCalledWith(
+      {
+        refreshMinutes: 5,
+        theme: 'light',
+        panelHeight: null,
+        panelWidth: null,
+        launcher: null,
+        lastPerson: null,
+      },
+      { mode: 'current' },
+    );
     expect(theme()).toBe('light');
 
     popover.open();
@@ -169,7 +189,7 @@ describe('settings pop-over', () => {
 
   it('tells the user when the browser could not store the settings', () => {
     const { popover, root, button, errors, themeSwitch } = build(
-      { refreshMinutes: 5, theme: 'dark', panelHeight: null, panelWidth: null, launcher: null },
+      { refreshMinutes: 5, theme: 'dark', panelHeight: null, panelWidth: null, launcher: null, lastPerson: null },
       false,
     );
     popover.open();

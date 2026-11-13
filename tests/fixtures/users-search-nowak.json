@@ -1,0 +1,67 @@
+[
+  {
+    "self": "https://example.atlassian.net/rest/api/3/user?accountId=712020:anna-1",
+    "accountId": "712020:anna-1",
+    "accountType": "atlassian",
+    "avatarUrls": {
+      "48x48": "https://avatars.example.invalid/48",
+      "24x24": "https://avatars.example.invalid/24"
+    },
+    "displayName": "Anna Nowak",
+    "active": true,
+    "timeZone": "Europe/Warsaw",
+    "emailAddress": "anna.nowak@example.com"
+  },
+  {
+    "self": "https://example.atlassian.net/rest/api/3/user?accountId=712020:anna-2",
+    "accountId": "712020:anna-2",
+    "accountType": "atlassian",
+    "avatarUrls": {
+      "48x48": "https://avatars.example.invalid/48",
+      "24x24": "https://avatars.example.invalid/24"
+    },
+    "displayName": "Anna Nowak",
+    "active": true,
+    "timeZone": "Europe/Warsaw",
+    "emailAddress": "a.nowak@example.com"
+  },
+  {
+    "self": "https://example.atlassian.net/rest/api/3/user?accountId=712020:piotr-1",
+    "accountId": "712020:piotr-1",
+    "accountType": "atlassian",
+    "avatarUrls": {
+      "48x48": "https://avatars.example.invalid/48",
+      "24x24": "https://avatars.example.invalid/24"
+    },
+    "displayName": "Piotr Nowakowski",
+    "active": true,
+    "timeZone": "Europe/Warsaw",
+    "emailAddress": ""
+  },
+  {
+    "self": "https://example.atlassian.net/rest/api/3/user?accountId=712020:bot-1",
+    "accountId": "712020:bot-1",
+    "accountType": "app",
+    "avatarUrls": {
+      "48x48": "https://avatars.example.invalid/48",
+      "24x24": "https://avatars.example.invalid/24"
+    },
+    "displayName": "Nowak Bot",
+    "active": true,
+    "timeZone": "Europe/Warsaw",
+    "emailAddress": ""
+  },
+  {
+    "self": "https://example.atlassian.net/rest/api/3/user?accountId=712020:old-1",
+    "accountId": "712020:old-1",
+    "accountType": "atlassian",
+    "avatarUrls": {
+      "48x48": "https://avatars.example.invalid/48",
+      "24x24": "https://avatars.example.invalid/24"
+    },
+    "displayName": "Marta Nowak",
+    "active": false,
+    "timeZone": "Europe/Warsaw",
+    "emailAddress": ""
+  }
+]

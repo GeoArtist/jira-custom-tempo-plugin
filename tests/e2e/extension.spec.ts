@@ -28,7 +28,9 @@ test('the built folder carries the installation guide, unchanged', () => {
 });
 
 /** A context with the extension installed and a fake Jira site behind the Jira address. */
-async function jiraWithExtension(signedIn: boolean): Promise<{ context: BrowserContext; requests: string[] }> {
+async function jiraWithExtension(
+  signedIn: boolean,
+): Promise<{ context: BrowserContext; requests: string[]; queries: string[]; urls: string[] }> {
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
     args: [`--disable-extensions-except=${EXTENSION}`, `--load-extension=${EXTENSION}`],
@@ -36,6 +38,11 @@ async function jiraWithExtension(signedIn: boolean): Promise<{ context: BrowserC
     viewport: { width: 1280, height: 800 },
   });
   const requests: string[] = [];
+  /** The JQL of every search, to see whose time was asked for. */
+  const queries: string[] = [];
+  /** Every address anything in the browser asked for, whatever the host. */
+  const urls: string[] = [];
+  context.on('request', (request) => urls.push(request.url()));
 
   await context.route(`${SITE}/**`, async (route) => {
     const request = route.request();
@@ -51,9 +58,25 @@ async function jiraWithExtension(signedIn: boolean): Promise<{ context: BrowserC
 
     requests.push(`${request.method()} ${url.pathname}`);
     if (url.pathname === '/rest/api/3/myself') {
-      return signedIn ? json(route, { accountId: 'me', timeZone: 'Europe/Warsaw' }) : json(route, {}, 401);
+      return signedIn
+        ? json(route, { accountId: 'me', displayName: 'Jan Kowalski', timeZone: 'Europe/Warsaw' })
+        : json(route, {}, 401);
+    }
+    if (url.pathname === '/rest/api/3/user/search') {
+      // A colleague, with a picture address the add-on must never ask for.
+      return json(route, [
+        {
+          accountId: 'someone-else',
+          accountType: 'atlassian',
+          displayName: 'Anna Nowak',
+          active: true,
+          emailAddress: '',
+          avatarUrls: { '48x48': 'https://avatars.invalid/someone-else/48' },
+        },
+      ]);
     }
     if (url.pathname === '/rest/api/3/search/jql') {
+      queries.push(url.searchParams.get('jql') ?? '');
       return json(route, {
         isLast: true,
         issues: [
@@ -73,7 +96,7 @@ async function jiraWithExtension(signedIn: boolean): Promise<{ context: BrowserC
     return json(route, {}, 404);
   });
 
-  return { context, requests };
+  return { context, requests, queries, urls };
 }
 
 test.describe('the built extension on a Jira Cloud address', () => {
@@ -103,6 +126,43 @@ test.describe('the built extension on a Jira Cloud address', () => {
         'GET /rest/api/3/myself',
         'GET /rest/api/3/search/jql',
       ]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('shows the time of a colleague, reading only from the Jira site', async () => {
+    const { context, requests, queries, urls } = await jiraWithExtension(true);
+    try {
+      const page = await context.newPage();
+      await page.goto(`${SITE}/jira/your-work`);
+      const launcher = page.locator('.wt-launcher');
+      await launcher.click();
+      await expect(page.locator('.wt-person')).toHaveText('Jan Kowalski');
+
+      await page.getByRole('button', { name: 'Ustawienia' }).click();
+      await page.getByRole('radio', { name: 'Inny użytkownik' }).check();
+      await page.locator('#wt-person-name').fill('anna nowak');
+      await page.locator('.wt-popover__actions .wt-button--primary').click();
+
+      await expect(page.locator('.wt-person')).toHaveText('Anna Nowak');
+      await expect(page.locator('.wt-title .wt-total')).toHaveText('1h 00m');
+      await expect(page.locator('.wt-table tbody a.wt-key')).toHaveText(['AM-10234']);
+      await expect(launcher).toHaveText('Anna Nowak · Dziś: 1h 00m');
+      expect(queries.at(-1)).toContain('worklogAuthor = "someone-else"');
+
+      // Only reads (002 FR-005), only the documented endpoints, and nothing outside the
+      // Jira site: no picture was asked for.
+      expect(requests.every((request) => request.startsWith('GET '))).toBe(true);
+      expect([...new Set(requests)].sort()).toEqual([
+        'GET /rest/api/3/issue/1/worklog',
+        'GET /rest/api/3/issue/2/worklog',
+        'GET /rest/api/3/myself',
+        'GET /rest/api/3/search/jql',
+        'GET /rest/api/3/user/search',
+      ]);
+      expect(requests.filter((request) => request.endsWith('/user/search'))).toHaveLength(1);
+      expect(urls.filter((url) => !url.startsWith(SITE) && !url.startsWith('chrome-extension://'))).toEqual([]);
     } finally {
       await context.close();
     }

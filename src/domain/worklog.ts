@@ -1,4 +1,4 @@
-// Time entries of the current user, grouped into table rows (data-model.md).
+// Time entries of the selected person, grouped into table rows (data-model.md).
 import type { Session } from '../jira/gateway';
 import { endInstant, startInstant, type Period } from './period';
 
@@ -67,17 +67,24 @@ export function parseStarted(value: string): number {
 }
 
 /**
- * Builds the table rows: only the current user's worklogs that start inside the period,
+ * Builds the table rows: only the worklogs of one author that start inside the period,
  * grouped per ticket. An entry belongs to the period by its start and counts with its
- * full duration (FR-001, FR-023).
+ * full duration (FR-001, FR-023). The author is the selected person (002 FR-002); without
+ * one it is the signed-in user.
  */
-export function buildRows(issues: RawIssue[], worklogs: RawWorklog[], session: Session, period: Period): TicketRow[] {
+export function buildRows(
+  issues: RawIssue[],
+  worklogs: RawWorklog[],
+  session: Session,
+  period: Period,
+  authorId: string = session.accountId,
+): TicketRow[] {
   const from = startInstant(period, session.timeZone);
   const until = endInstant(period, session.timeZone);
 
   const entriesByIssue = new Map<string, TimeEntry[]>();
   for (const worklog of worklogs) {
-    if (worklog.author?.accountId !== session.accountId) continue;
+    if (worklog.author?.accountId !== authorId) continue;
     const startedMs = parseStarted(worklog.started);
     if (!(startedMs >= from && startedMs < until)) continue;
     const entry: TimeEntry = {

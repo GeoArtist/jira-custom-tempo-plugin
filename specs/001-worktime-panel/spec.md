@@ -36,6 +36,8 @@
 
 **Amendment 2026-11-13 (14)**: a minimise button, requested on 2026-11-13: between the settings button and the close button, with the sign of a window's minimise button; it hides the panel exactly as a click on the launcher does, and everything stays as it was (User Story 5; FR-064; new FR-086).
 
+**Amended by 002-other-user-worktime (2026-11-13)**: the panel can show the time of another person of the same Jira site, chosen by name in the settings ([spec 002](../002-other-user-worktime/spec.md)). FR-001 is replaced by 002 FR-001: the entries shown are those of the selected person, by default the signed-in user. The assumption "Only the current user's time is shown; viewing other people's time and team reports are out of scope" no longer holds for a single other person; team reports stay out of scope. FR-070 is narrowed: nothing stands under the title, but the name of the person stands on a line above it (002 FR-006). FR-060 does not apply to a change of person: the table is emptied at once (002 FR-003).
+
 ## Inspiration Images
 
 The two mock-ups supplied with the request are stored with this spec. They show the intended look

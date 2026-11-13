@@ -28,6 +28,7 @@ export interface Route {
 
 export const fakeSession: Session = {
   accountId: 'me',
+  displayName: 'Jan Kowalski',
   timeZone: 'Europe/Warsaw',
   siteUrl: 'https://example.atlassian.net',
 };

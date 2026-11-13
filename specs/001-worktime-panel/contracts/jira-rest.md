@@ -8,6 +8,11 @@ the browser. It exposes no API of its own. This file fixes exactly which request
 sends and which response fields it reads, so tests can mock them and reviewers can check what
 it touches.
 
+Since feature 002 the same three requests also read the time of another person, named by
+account ID, and three more requests look people up. They are described in
+[the contract of 002](../../002-other-user-worktime/contracts/jira-rest.md); the access rules
+below hold for them too.
+
 ## Access
 
 | Aspect | Rule |
@@ -29,7 +34,7 @@ Read fields:
 
 | Field | Use |
 |-------|-----|
-| `accountId` | keep only this user's worklogs (FR-001) |
+| `accountId` | keep only this user's worklogs (FR-001), unless another person is selected (see below) |
 | `timeZone` | IANA zone for day boundaries and displayed times (FR-026); when absent, the browser's own time zone |
 
 Sent once when the page loads. Any status other than 200, or an answer without `accountId`,
@@ -79,7 +84,7 @@ Read fields per worklog:
 |-------|-----|
 | `id` | identity |
 | `issueId` | grouping |
-| `author.accountId` | keep only the current user's worklogs (FR-001) |
+| `author.accountId` | keep only the worklogs of the selected person: the signed-in user by default (FR-001, 002 FR-002) |
 | `started` | start instant; format `2026-11-06T07:00:00.000+0100` (offset with or without colon, or `Z`) |
 | `timeSpentSeconds` | duration |
 

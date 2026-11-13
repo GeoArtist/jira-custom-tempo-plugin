@@ -1,4 +1,5 @@
-// The user settings, kept in the browser (contracts/settings-storage.md).
+// The user settings, kept in the browser (contracts/settings-storage.md of 001 and 002).
+import { isPerson, type Person } from './person';
 
 export type Theme = 'dark' | 'light';
 
@@ -12,6 +13,11 @@ export interface UserSettings {
   panelWidth: number | null;
   /** Where the user dragged the launcher; null = its default corner (FR-072). */
   launcher: LauncherPosition | null;
+  /**
+   * The other person saved last. It only fills the name field of the settings in advance;
+   * it never decides whose time is shown on start (002 FR-035).
+   */
+  lastPerson: Person | null;
 }
 
 /** The two dimensions of the panel the user can set. */
@@ -41,6 +47,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   panelHeight: null,
   panelWidth: null,
   launcher: null,
+  lastPerson: null,
 };
 
 /** The part of the Web Storage API the app uses. */
@@ -84,7 +91,7 @@ export function readSettings(storage: SettingsStorage | null): UserSettings {
   try {
     const stored: unknown = JSON.parse(storage?.getItem(SETTINGS_KEY) ?? 'null');
     if (typeof stored !== 'object' || stored === null) return { ...DEFAULT_SETTINGS };
-    const { refreshMinutes, theme, panelHeight, panelWidth, launcher } = stored as Record<string, unknown>;
+    const { refreshMinutes, theme, panelHeight, panelWidth, launcher, lastPerson } = stored as Record<string, unknown>;
     return {
       refreshMinutes: isValidInterval(refreshMinutes) ? refreshMinutes : DEFAULT_SETTINGS.refreshMinutes,
       theme: theme === 'dark' || theme === 'light' ? theme : DEFAULT_SETTINGS.theme,
@@ -93,6 +100,10 @@ export function readSettings(storage: SettingsStorage | null): UserSettings {
       launcher: isValidLauncherPosition(launcher)
         ? { right: launcher.right, bottom: launcher.bottom }
         : DEFAULT_SETTINGS.launcher,
+      // Only the two fields: whatever else is stored beside them is left behind.
+      lastPerson: isPerson(lastPerson)
+        ? { accountId: lastPerson.accountId, displayName: lastPerson.displayName }
+        : DEFAULT_SETTINGS.lastPerson,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

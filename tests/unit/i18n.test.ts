@@ -30,6 +30,19 @@ describe('Polish texts', () => {
     expect(missing).toEqual([]);
   });
 
+  it('contain every text of spec 002 (FR-029)', () => {
+    const spec = read('specs/002-other-user-worktime/spec.md');
+    const table = spec.slice(spec.indexOf('- **FR-029**'), spec.indexOf('- **FR-048**'));
+    const texts = table
+      .split('\n')
+      .filter((line) => line.trim().startsWith('|') && !line.includes('| Element') && !line.includes('|---'))
+      .flatMap((line) => [...(line.split('|')[2] ?? '').matchAll(/`([^`]+)`/g)].map((match) => match[1] ?? ''));
+    expect(texts).toHaveLength(11);
+
+    const module = read('src/i18n/pl.ts');
+    expect(texts.filter((text) => !module.includes(`'${text}'`))).toEqual([]);
+  });
+
   it('live only in src/i18n/pl.ts', () => {
     const offenders = sourceFiles(join(root, 'src'))
       .filter((path) => !path.endsWith(join('i18n', 'pl.ts')))

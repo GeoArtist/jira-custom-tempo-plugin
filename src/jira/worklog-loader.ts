@@ -1,7 +1,8 @@
-// Reads the current user's worklogs for a period (contracts/jira-rest.md).
+// Reads one person's worklogs for a period (contracts/jira-rest.md of 001 and 002).
 import { formatIsoDate } from '../domain/format';
 import { addDays } from '../domain/local-date';
 import { endInstant, startInstant, type Period } from '../domain/period';
+import { isValidAccountId } from '../domain/person';
 import { buildRows, type RawIssue, type RawWorklog, type TicketRow } from '../domain/worklog';
 import { HttpError, type JiraGateway, type Session } from './gateway';
 import { RequestPool, type PoolOptions } from './request-pool';
@@ -22,17 +23,24 @@ interface WorklogPage {
   worklogs?: RawWorklog[];
 }
 
-export interface LoadOptions extends PoolOptions {}
+export interface LoadOptions extends PoolOptions {
+  /** Whose worklogs to read; the signed-in user when left out (002 FR-002). */
+  authorId?: string;
+}
 
 /**
  * The candidate query. The dates are padded by one day on each side because the time zone
  * in which Jira evaluates `worklogDate` is not documented; exact filtering happens later.
+ * Another person is named by their account ID in double quotes; an ID that could change
+ * the query is never written into it.
  */
-export function buildJql(period: Period, withAuthor: boolean): string {
+export function buildJql(period: Period, withAuthor: boolean, authorId?: string): string {
   const from = formatIsoDate(addDays(period.from.date, -1));
   const to = formatIsoDate(addDays(period.to.date, 1));
   const dates = `worklogDate >= "${from}" AND worklogDate <= "${to}"`;
-  return withAuthor ? `worklogAuthor = currentUser() AND ${dates}` : dates;
+  if (!withAuthor) return dates;
+  if (authorId === undefined) return `worklogAuthor = currentUser() AND ${dates}`;
+  return isValidAccountId(authorId) ? `worklogAuthor = "${authorId}" AND ${dates}` : dates;
 }
 
 async function searchIssues(gateway: JiraGateway, pool: RequestPool, jql: string): Promise<RawIssue[]> {
@@ -52,9 +60,14 @@ async function searchIssues(gateway: JiraGateway, pool: RequestPool, jql: string
   return issues;
 }
 
-async function findCandidates(gateway: JiraGateway, pool: RequestPool, period: Period): Promise<RawIssue[]> {
+async function findCandidates(
+  gateway: JiraGateway,
+  pool: RequestPool,
+  period: Period,
+  authorId: string | undefined,
+): Promise<RawIssue[]> {
   try {
-    return await searchIssues(gateway, pool, buildJql(period, true));
+    return await searchIssues(gateway, pool, buildJql(period, true, authorId));
   } catch (error) {
     // `worklogAuthor` is not in the current JQL reference. Without it more issues are
     // scanned, but the author filter in buildRows keeps the result identical.
@@ -98,9 +111,11 @@ export async function loadPeriod(
   options: LoadOptions = {},
 ): Promise<TicketRow[]> {
   const pool = new RequestPool(options);
-  const issues = await findCandidates(gateway, pool, period);
+  // The signed-in user stays `currentUser()` in the query, as before.
+  const authorId = options.authorId ?? session.accountId;
+  const issues = await findCandidates(gateway, pool, period, authorId === session.accountId ? undefined : authorId);
   const fromMs = startInstant(period, session.timeZone);
   const untilMs = endInstant(period, session.timeZone);
   const perIssue = await Promise.all(issues.map((issue) => issueWorklogs(gateway, pool, issue.id, fromMs, untilMs)));
-  return buildRows(issues, perIssue.flat(), session, period);
+  return buildRows(issues, perIssue.flat(), session, period, authorId);
 }

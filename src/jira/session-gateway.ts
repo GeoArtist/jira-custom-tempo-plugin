@@ -9,6 +9,7 @@ type Fetch = (input: string, init?: RequestInit) => Promise<GatewayResponse>;
 
 interface Myself {
   accountId?: string;
+  displayName?: string;
   timeZone?: string;
 }
 
@@ -34,6 +35,7 @@ export function createGateway(
       if (!myself.accountId) throw new HttpError(401, MYSELF_PATH);
       return {
         accountId: myself.accountId,
+        displayName: myself.displayName ?? '',
         timeZone: myself.timeZone || browserTimeZone(),
         siteUrl: siteUrl.replace(/\/+$/, ''),
       };

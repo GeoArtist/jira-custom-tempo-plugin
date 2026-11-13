@@ -10,6 +10,8 @@ export interface GatewayResponse {
 /** Who is using the app and where (data-model.md, Session). */
 export interface Session {
   accountId: string;
+  /** The user's full name as Jira has it; empty when Jira gives none (002 FR-010). */
+  displayName: string;
   /** IANA time zone of the user's Jira profile. */
   timeZone: string;
   /** Base URL of the Jira site, without a trailing slash. */

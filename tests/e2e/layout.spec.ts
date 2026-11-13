@@ -155,7 +155,7 @@ test('settings: a divider under the title, and a sun-and-moon switch at the left
       bottom: Math.round(box.y + box.height - (k.y + k.height)),
     };
   };
-  const accent = await paintedColour(popover.locator('.wt-button--primary'), 'backgroundColor');
+  const accent = await paintedColour(popover.locator('.wt-popover__actions .wt-button--primary'), 'backgroundColor');
   expect(await paintedColour(knob, 'backgroundColor')).toEqual(accent);
 
   // Each icon is centred in the knob's place: the moon at the right, the sun at the left.
@@ -307,7 +307,9 @@ test('the header has no subtitle and the bar stands midway between the period bo
   page,
 }, testInfo) => {
   await openPanel(page);
-  await expect(page.locator('.wt-header__text > *')).toHaveCount(1);
+  // The name of the person stands above the title (spec 002, FR-006); nothing stands under it.
+  await expect(page.locator('.wt-header__text > *')).toHaveCount(2);
+  await expect(page.locator('.wt-header__text > :last-child')).toHaveClass('wt-title');
   await expect(panel(page)).not.toContainText('Twój zalogowany czas');
   if (testInfo.project.name === 'phone') return;
 
@@ -644,4 +646,90 @@ test('the panel stays on the launcher when the window is resized', async ({ page
     expect(p.y).toBeGreaterThanOrEqual(0);
     expect(p.y + p.height).toBeLessThanOrEqual(height + 0.5);
   }
+});
+
+test('every header button is whole inside the panel, also in the narrowest window', async ({ page }) => {
+  await openPanel(page);
+  const box = await panel(page).boundingBox();
+  if (!box) throw new Error('not rendered');
+  const buttons = page.locator('.wt-header__actions button');
+  await expect(buttons).toHaveCount(6);
+  for (const button of await buttons.all()) {
+    const b = await button.boundingBox();
+    const name = (await button.getAttribute('aria-label')) ?? (await button.textContent());
+    if (!b) throw new Error(`${name} is not laid out`);
+    // Nothing of a button is cut by the edge of the panel (it clips what leaves it).
+    expect(b.x, `${name}: left edge`).toBeGreaterThanOrEqual(box.x);
+    expect(b.x + b.width, `${name}: right edge`).toBeLessThanOrEqual(box.x + box.width);
+  }
+  // One row: the six buttons stand side by side.
+  const tops = await buttons.evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
+  expect(new Set(tops).size).toBe(1);
+});
+
+// ---------------------------------------------------------------- the time of another person (spec 002)
+
+test('the settings stay inside the window with the list of people and with the alert open', async ({ page }) => {
+  await openPanel(page, { scenario: 'people-many' });
+  await page.getByRole('button', { name: 'Ustawienia' }).click();
+  await page.getByRole('radio', { name: 'Inny użytkownik' }).check();
+  const save = page.locator('.wt-popover__actions .wt-button--primary');
+  const popover = page.locator('.wt-popover');
+  const inside = async (): Promise<void> => {
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+    const box = await popover.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box && viewport && box.x >= 0 && box.x + box.width <= viewport.width).toBe(true);
+  };
+
+  // A long text scrolls inside the field instead of widening the settings.
+  await page.locator('#wt-person-name').fill('Kowalski '.repeat(20).trim());
+  await inside();
+
+  await page.locator('#wt-person-name').fill('Kowalski');
+  await save.click();
+  await expect(page.locator('.wt-people__option')).toHaveCount(10);
+  await inside();
+
+  await page.locator('#wt-person-name').fill('Jan Nieistniejący');
+  await save.click();
+  await expect(page.getByRole('alertdialog')).toBeVisible();
+  await inside();
+  const alert = await page.getByRole('alertdialog').boundingBox();
+  const box = await popover.boundingBox();
+  expect(alert && box && alert.x >= box.x && alert.x + alert.width <= box.x + box.width).toBe(true);
+});
+
+test('the launcher with the name of another person stays inside the window when it is resized', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'the test sets its own window sizes');
+  await openPanel(page);
+  await page.getByRole('button', { name: 'Ustawienia' }).click();
+  await page.getByRole('radio', { name: 'Inny użytkownik' }).check();
+  await page.locator('#wt-person-name').fill('Aleksandra Konstancja Brzeczyszczykiewicz');
+  await page.locator('.wt-popover__actions .wt-button--primary').click();
+  await expect(page.locator('.wt-person')).toHaveText('Aleksandra Konstancja Brzeczyszczykiewicz');
+  await page.getByRole('button', { name: 'Minimalizuj' }).click();
+
+  for (const width of [1280, 480, 320, 1280]) {
+    await page.setViewportSize({ width, height: 700 });
+    await expect
+      .poll(async () => {
+        const box = await launcher(page).boundingBox();
+        return box !== null && box.x >= 0 && box.x + box.width <= width && box.height === 44;
+      })
+      .toBe(true);
+  }
+  // Back in a wide window it stands in its usual corner again.
+  const box = await launcher(page).boundingBox();
+  expect(box && 1280 - (box.x + box.width)).toBe(88);
+
+  // Without a name it reads as before.
+  await launcher(page).click();
+  await page.getByRole('button', { name: 'Zamknij' }).click();
+  await expect(launcher(page)).toHaveText('Dziś: 10h 10m');
 });

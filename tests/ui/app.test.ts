@@ -666,6 +666,7 @@ describe('auto-refresh of the open panel', () => {
       panelHeight: null,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
 
     byLabel(root, 'Ustawienia')?.click();
@@ -719,6 +720,7 @@ describe('panel height', () => {
       panelHeight: 600,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
     expect(height(saved.root)).toBe('600px');
   });
@@ -730,6 +732,7 @@ describe('panel height', () => {
       panelHeight: 600,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
     // The test page has no layout, so the height the handle reads is the saved one.
     handle(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
@@ -740,6 +743,7 @@ describe('panel height', () => {
       panelHeight: 616,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
 
     for (let press = 0; press < 30; press += 1) {
@@ -756,6 +760,7 @@ describe('panel height', () => {
       panelHeight: 600,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
     handle(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
     expect(height(root)).toBe('');
@@ -769,6 +774,7 @@ describe('panel height', () => {
       panelHeight: 600,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
     handle(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
     byLabel(root, 'Ustawienia')?.click();
@@ -779,6 +785,7 @@ describe('panel height', () => {
       panelHeight: 616,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
   });
 });
@@ -790,7 +797,14 @@ describe('panel width', () => {
     JSON.parse(storage.data.get(SETTINGS_KEY) ?? '{}') as Record<string, unknown>;
   const press = (node: HTMLElement, key: string) =>
     node.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-  const saved = { refreshMinutes: 5, theme: 'dark', panelHeight: 600, panelWidth: 700, launcher: null };
+  const saved = {
+    refreshMinutes: 5,
+    theme: 'dark',
+    panelHeight: 600,
+    panelWidth: 700,
+    launcher: null,
+    lastPerson: null,
+  };
 
   it('has a grip for the width and one for both dimensions', async () => {
     const { root } = await mountOpen(new FakeGateway(todayRoutes()), saved);
@@ -850,6 +864,7 @@ describe('launcher position', () => {
       refreshMinutes: 5,
       theme: 'dark',
       launcher: { right: 300, bottom: 200 },
+      lastPerson: null,
     });
     expect(offsets(moved.app.root)).toEqual(['300px', '200px']);
   });
@@ -903,6 +918,7 @@ describe('launcher position', () => {
       refreshMinutes: 5,
       theme: 'dark',
       launcher: { right: 300, bottom: 200 },
+      lastPerson: null,
     });
     byLabel(root, 'Ustawienia')?.click();
     button(root, 'Zapisz')?.click();
@@ -938,6 +954,7 @@ describe('appearance', () => {
       panelHeight: null,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
   });
 

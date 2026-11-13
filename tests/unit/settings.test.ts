@@ -31,6 +31,7 @@ describe('readSettings', () => {
       panelHeight: null,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
     expect(readSettings(memoryStorage())).toEqual(DEFAULT_SETTINGS);
     expect(readSettings(null)).toEqual(DEFAULT_SETTINGS);
@@ -46,6 +47,7 @@ describe('readSettings', () => {
       panelHeight: 600,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
   });
 
@@ -62,6 +64,7 @@ describe('readSettings', () => {
       panelHeight: null,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
     expect(readSettings(memoryStorage(JSON.stringify({ refreshMinutes: 10, theme: 'blue', extra: 1 })))).toEqual({
       refreshMinutes: 10,
@@ -69,6 +72,7 @@ describe('readSettings', () => {
       panelHeight: null,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     });
     // A height that is too low, too high, or not a whole number of pixels is not used.
     for (const panelHeight of [100, 5000, 500.5, '500']) {
@@ -78,6 +82,7 @@ describe('readSettings', () => {
         panelHeight: null,
         panelWidth: null,
         launcher: null,
+        lastPerson: null,
       });
     }
     expect(readSettings(memoryStorage(JSON.stringify({ refreshMinutes: 2.5 }))).refreshMinutes).toBe(5);
@@ -93,6 +98,7 @@ describe('writeSettings', () => {
       panelHeight: 600,
       panelWidth: null,
       launcher: null,
+      lastPerson: null,
     } as const;
     expect(writeSettings(storage, settings)).toBe(true);
     expect(JSON.parse(storage.data.get('worktime.settings.v1') ?? '')).toEqual(settings);
@@ -138,5 +144,55 @@ describe('panel width and launcher position', () => {
     for (const launcher of [{ right: -1, bottom: 0 }, { right: 10 }, { right: 1.5, bottom: 2 }, 'left', [1, 2], null]) {
       expect(read({ launcher }).launcher).toBeNull();
     }
+  });
+});
+
+describe('the remembered person', () => {
+  const read = (stored: object) => readSettings(memoryStorage(JSON.stringify(stored)));
+  const anna = { accountId: '712020:0f3c9a1e-7b2d-4c55-9a10-2f6d8e4b1c77', displayName: 'Anna Nowak' };
+
+  it('is nobody by default and in settings stored by the previous version', () => {
+    expect(DEFAULT_SETTINGS.lastPerson).toBeNull();
+    expect(read({ refreshMinutes: 10, theme: 'light', panelHeight: null, panelWidth: null, launcher: null })).toEqual({
+      refreshMinutes: 10,
+      theme: 'light',
+      panelHeight: null,
+      panelWidth: null,
+      launcher: null,
+      lastPerson: null,
+    });
+  });
+
+  it('is read with its two fields only', () => {
+    expect(read({ lastPerson: { ...anna, emailAddress: 'anna@example.com' } }).lastPerson).toEqual(anna);
+  });
+
+  it.each([
+    ['a missing account ID', { displayName: 'Anna Nowak' }],
+    ['an account ID that is not one', { accountId: 'a" OR "b', displayName: 'Anna Nowak' }],
+    ['an account ID of 129 characters', { accountId: 'x'.repeat(129), displayName: 'Anna Nowak' }],
+    ['a missing name', { accountId: 'abc' }],
+    ['an empty name', { accountId: 'abc', displayName: '' }],
+    ['a name of 256 characters', { accountId: 'abc', displayName: 'x'.repeat(256) }],
+    ['a text', 'Anna Nowak'],
+    ['a list', [anna]],
+  ])('counts as nobody with %s, and the other fields keep their values', (_what, lastPerson) => {
+    const settings = read({ refreshMinutes: 15, theme: 'light', lastPerson });
+    expect(settings.lastPerson).toBeNull();
+    expect([settings.refreshMinutes, settings.theme]).toEqual([15, 'light']);
+  });
+
+  it('accepts a name of 255 characters', () => {
+    const long = { accountId: 'abc', displayName: 'x'.repeat(255) };
+    expect(read({ lastPerson: long }).lastPerson).toEqual(long);
+  });
+
+  it('is stored with the other settings under the same key', () => {
+    const storage = memoryStorage();
+    const settings = { ...DEFAULT_SETTINGS, lastPerson: anna };
+    expect(writeSettings(storage, settings)).toBe(true);
+    expect([...storage.data.keys()]).toEqual([SETTINGS_KEY]);
+    expect(SETTINGS_KEY).toBe('worktime.settings.v1');
+    expect(readSettings(storage)).toEqual(settings);
   });
 });

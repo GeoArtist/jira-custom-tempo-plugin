@@ -1,4 +1,5 @@
 // View state, loading, and auto-refresh for the panel (data-model.md, "View state").
+import type { Person } from '../domain/person';
 import { contains, matchPreset, presetPeriod, shift, type Period, type PresetName } from '../domain/period';
 import { summarise, type PeriodSummary } from '../domain/summary';
 import { filterRows, type TicketRow } from '../domain/worklog';
@@ -32,6 +33,8 @@ export interface Timers {
 export interface ControllerOptions {
   gateway: JiraGateway;
   session: Session;
+  /** Whose time is shown; the signed-in user when left out (002 FR-001). */
+  person?: Person;
   header: Header;
   table: Table;
   progress: Progress;
@@ -62,6 +65,8 @@ export class Controller {
   private readonly timers: Timers;
   private readonly doc: Pick<Document, 'hidden' | 'addEventListener'>;
 
+  /** The person every load is for (002 FR-038). */
+  private person: Person;
   private rows: TicketRow[] = [];
   /** What Jira returned last, and for which period: the parts of it need no new request. */
   private loaded: { period: Period; rows: TicketRow[] } | null = null;
@@ -84,6 +89,10 @@ export class Controller {
     this.timers = options.timers ?? browserTimers;
     this.doc = options.doc ?? document;
     this.refreshMinutes = options.refreshMinutes;
+    this.person = options.person ?? {
+      accountId: options.session.accountId,
+      displayName: options.session.displayName,
+    };
     this.period = presetPeriod('today', options.session.timeZone, this.now());
     this.history = [{ period: this.period, rows: null }];
     this.showHistory();
@@ -96,6 +105,39 @@ export class Controller {
     this.history = [{ period: this.period, rows: null }];
     this.position = 0;
     this.showHistory();
+    return this.load(false);
+  }
+
+  /**
+   * Another person from now on. Everything held for the previous one goes at once and
+   * nothing is loaded: the rows on screen, the last load, and the views of back and
+   * forward. Rows of one person never stand under the name of another (002 FR-003,
+   * FR-004). The period, the sort order, and the zoom of the chart stay (002 FR-037).
+   */
+  reset(person: Person): void {
+    const { header, table, progress, periodBar, session } = this.options;
+    this.abort?.abort();
+    this.abort = null;
+    this.loadId += 1;
+    this.cancelTimer();
+    this.person = person;
+    this.rows = [];
+    this.loaded = null;
+    this.history = [{ period: this.period, rows: null }];
+    this.position = 0;
+    this.state = 'idle';
+    this.showHistory();
+    header.setBusy(false);
+    // The total is not known yet; the bar or the chart is drawn without any time.
+    header.update(this.period, null);
+    progress.update(summarise([], this.period), this.period, [], session.timeZone);
+    periodBar.update(this.period);
+    table.clear();
+  }
+
+  /** Shows the period on screen for another person (002 FR-003). */
+  setPerson(person: Person): Promise<void> {
+    this.reset(person);
     return this.load(false);
   }
 
@@ -265,7 +307,10 @@ export class Controller {
     table.showLoading();
 
     try {
-      const rows = await loadPeriod(gateway, session, period, { signal: abort.signal });
+      const rows = await loadPeriod(gateway, session, period, {
+        signal: abort.signal,
+        authorId: this.person.accountId,
+      });
       if (id !== this.loadId) return;
       this.rows = rows;
       view.rows = rows;

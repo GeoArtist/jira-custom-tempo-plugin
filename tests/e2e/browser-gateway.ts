@@ -1,6 +1,7 @@
 // Replaces src/jira/session-gateway.ts in demo builds (see vite.config.ts). It answers like
 // Jira from data chosen by the page address:
 //   ?scenario=today|empty|error|long-title|h4|h8|h20|week|month|refresh-changes|signed-out
+//             |showcase   (a whole year of plausible work, for the screenshots of the README)
 //   &delay=<ms>    how long each fake Jira request takes
 // With refresh-changes, 30 more minutes appear once the test sets window.__moreLogged.
 // The tests fix the browser clock at Friday 6 November 2026, 12:00 in Warsaw.
@@ -102,8 +103,78 @@ function month(): Scenario {
   return { issues, logs };
 }
 
+/**
+ * A year that looks like real work: every working day of 2026 up to 6 November has two to
+ * four entries on a handful of tickets, a summer holiday is empty, and today is the day of
+ * the `today` scenario. The same numbers every time: the "random" values come from a fixed
+ * sequence.
+ */
+function showcase(): Scenario {
+  const base = today();
+  const issues = [
+    ...base.issues,
+    issue('4', 'AM-10391', 'Eksport raportu czasu pracy do pliku CSV'),
+    issue('5', 'AM-10412', 'Poprawki wydajnosci listy zgloszen'),
+    issue('6', 'AM-20034', 'Planowanie sprintu i refinement'),
+    issue('7', 'AM-10455', 'Testy automatyczne modulu platnosci'),
+  ];
+  const logs = base.logs.filter((entry) => entry.started.startsWith('2026-11-06'));
+
+  let seed = 20261106;
+  const random = (): number => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
+  const two = (value: number): string => String(value).padStart(2, '0');
+  const work = ['1', '3', '4', '5', '7'];
+
+  const last = Date.UTC(2026, 10, 5);
+  for (let at = Date.UTC(2026, 0, 2); at <= last; at += 86_400_000) {
+    const date = new Date(at);
+    const weekday = date.getUTCDay();
+    const month = date.getUTCMonth() + 1;
+    const day = date.getUTCDate();
+    if (weekday === 0 || weekday === 6) continue;
+    // Two weeks off in July, and a free day now and then.
+    if ((month === 7 && day >= 13 && day <= 24) || random() < 0.04) continue;
+
+    // Poland is on summer time from 29 March to 24 October 2026.
+    const summer = (month > 3 && month < 10) || (month === 3 && day >= 29) || (month === 10 && day <= 24);
+    const stamp = (minute: number): string =>
+      `2026-${two(month)}-${two(day)}T${two(Math.floor(minute / 60))}:${two(minute % 60)}:00.000${summer ? '+0200' : '+0100'}`;
+    const add = (issueId: string, minute: number, minutes: number): void => {
+      logs.push({
+        id: `s${logs.length}`,
+        issueId,
+        author: { accountId: ME },
+        started: stamp(minute),
+        timeSpentSeconds: minutes * 60,
+      });
+    };
+
+    // A short meeting most mornings, then two or three blocks of work: 6 to 11.5 hours.
+    let minute = 8 * 60 + Math.floor(random() * 4) * 15;
+    if (random() < 0.7) {
+      add(weekday === 1 ? '6' : '2', minute, weekday === 1 ? 60 : 15 + Math.floor(random() * 3) * 15);
+      minute += 75;
+    }
+    const total = 360 + Math.floor(random() * random() * 17) * 15 + (random() < 0.3 ? 90 : 0);
+    const blocks = 2 + Math.floor(random() * 2);
+    let left = total;
+    for (let block = 0; block < blocks && left > 0; block += 1) {
+      const minutes = block === blocks - 1 ? left : Math.max(30, Math.round((left * (0.3 + random() * 0.4)) / 15) * 15);
+      add(work[Math.floor(random() * work.length)] as string, minute, Math.min(minutes, left));
+      minute += minutes + 15 + Math.floor(random() * 3) * 15;
+      left -= minutes;
+    }
+  }
+  return { issues, logs };
+}
+
 function scenario(name: string): Scenario {
   switch (name) {
+    case 'showcase':
+      return showcase();
     case 'empty':
       return { issues: [], logs: [] };
     case 'long-title': {

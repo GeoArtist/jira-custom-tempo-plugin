@@ -8,6 +8,44 @@ On every Jira page a small button in the bottom-right corner shows today's total
 ticket, and the total. For a single day the panel also shows a progress bar against the
 8-hour norm; for a longer period, a bar chart of the days, months, or years.
 
+## Screenshots
+
+The pictures show the extension with sample data. `vp run screenshots` takes them again.
+
+**The launcher.** A small button on every Jira page with today's total. A click opens the
+panel; you can drag it anywhere.
+
+<img src="docs/screenshots/launcher.png" alt="The launcher: Dziś: 10h 10m" width="150">
+
+**One day.** The progress bar against the 8-hour norm (blue to green up to 8 hours, yellow
+to red beyond), and a table with one row per ticket: every time entry and the sum.
+
+<img src="docs/screenshots/day.png" alt="One day: the progress bar and the table of tickets" width="760">
+
+**A week.** A period longer than one day shows a bar per day in the same colours, with a
+dashed line at 8 hours. Point at a bar for its date and total; click it to see only that day.
+
+<img src="docs/screenshots/week.png" alt="A week: one bar per day and the tip of a bar" width="760">
+
+**A year.** Longer periods show a bar per month. The plus button, the plus key, or Ctrl
+with the mouse wheel zooms in to single days.
+
+<img src="docs/screenshots/year.png" alt="A year: one bar per month and the zoom buttons" width="760">
+
+**A month, after a click on its bar.** The days come from the data already loaded, with no
+new request to Jira. "Cofnij" and "Ponów" (the curved arrows) go back and forward through
+the views; the round arrows beside the rows move to the previous and next month.
+
+<img src="docs/screenshots/month.png" alt="A month: one bar per day" width="760">
+
+**Settings.** The auto-refresh interval and the dark / light switch.
+
+<img src="docs/screenshots/settings.png" alt="The settings pop-over" width="760">
+
+**The light appearance.**
+
+<img src="docs/screenshots/light.png" alt="A week in the light appearance" width="760">
+
 ## What you get
 
 - **Launcher**: today's total on every Jira page, coloured like the progress bar. When you
@@ -82,6 +120,7 @@ install an extension from a file in any other way.
 | `vp run test:e2e` | Browser tests: the stand-in page at 320 px, 1280 px, and 1920 px, and the real extension loaded into Chromium |
 | `vp run check` | All of the above: the full gate before a merge |
 | `vp run package` | Builds and packs the zip file |
+| `vp run screenshots` | Takes the pictures of this page again into `docs/screenshots/`, from the stand-in page with a year of sample data (`?scenario=showcase`) |
 
 The browser tests need Chromium once: `npx playwright install chromium`.
 

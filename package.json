@@ -11,6 +11,7 @@
     "preview": "vp build --mode demo && vp preview --mode demo",
     "package": "vp build && node scripts/check-size.ts && node scripts/package.ts",
     "icons": "node scripts/make-icons.ts",
+    "screenshots": "vp build --mode demo && node scripts/screenshots.ts",
     "lint": "vp check",
     "test": "vp test run",
     "test:e2e": "vp build && playwright test",

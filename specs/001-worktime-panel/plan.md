@@ -155,6 +155,7 @@ scripts/
 ├── check-size.ts            # gzipped size of the built extension; fails above 100 kB
 ├── package.ts               # packs dist/extension into a .zip (node:zlib only)
 ├── make-icons.ts            # draws the PNG icons from icon.svg (vp run icons)
+├── screenshots.ts           # takes the README pictures into docs/screenshots (vp run screenshots)
 └── icon.svg                 # source drawing of the icons
 
 src/

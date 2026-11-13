@@ -25,6 +25,7 @@ commands shown here.
 | `vp test run` | Unit and UI tests (no Jira needed) | All pass |
 | `vp check` | Format, lint, and type checks (`--fix` repairs formatting) | No findings |
 | `vp run build` | Builds the extension into `dist/extension/` and checks its size | `content.js`, `manifest.json`, `icons/`, and a copy of `BrowserInstallation.md`; at most 100 kB gzipped |
+| `vp run screenshots` | Builds the stand-in page and takes the pictures of the README from its `showcase` data | seven PNG files in `docs/screenshots/`; needed only after the look changes |
 | `vp run icons` | Draws `extension/icons/icon-*.png` from `scripts/icon.svg` | four PNG files (16, 32, 48, 128 px); needed only after the drawing changes |
 | `vp run test:e2e` | Builds, then runs the browser tests: the stand-in page at 320 px, 1280 px, and 1920 px, and the real extension in Chromium | All pass |
 | `vp run check` | All of the above: the full merge gate | All pass |

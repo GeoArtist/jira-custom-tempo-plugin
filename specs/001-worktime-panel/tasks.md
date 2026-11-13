@@ -357,6 +357,14 @@ Single front-end project at the repository root: `src/`, `tests/`, `scripts/`, `
 
 ---
 
+## Phase 21: Pictures in the README
+
+**Purpose**: The README shows what the extension looks like and can do, requested on 2026-11-13.
+
+- [X] T129 `scripts/screenshots.ts` and the script `screenshots` in `package.json`: serve the built stand-in page, open it in Chromium on 6 November 2026 with the Polish browser language, and save the launcher, a day, a week, a year, a month, the settings, and the light appearance into `docs/screenshots/`; the scenario `showcase` in `tests/e2e/browser-gateway.ts` (a year of plausible entries, the same on every run); a "Screenshots" section in `README.md`.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

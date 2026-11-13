@@ -2,8 +2,19 @@
 // launcher the user moves and the panel that hangs on it, spinner over the table, sortable
 // columns, the progress tip, the total row, the theme switch, hover colours, minimise and
 // close.
-import { expect, test } from '@playwright/test';
-import { chip, footerTotal, launcher, openPanel, paintedColour, panel, rows, selectDay, theme } from './helpers';
+import { expect, test, type Page } from '@playwright/test';
+import {
+  chip,
+  expectInsideWindow,
+  footerTotal,
+  launcher,
+  openPanel,
+  paintedColour,
+  panel,
+  rows,
+  selectDay,
+  theme,
+} from './helpers';
 
 const keys = '.wt-table tbody a.wt-key';
 
@@ -732,4 +743,143 @@ test('the launcher with the name of another person stays inside the window when 
   await launcher(page).click();
   await page.getByRole('button', { name: 'Zamknij' }).click();
   await expect(launcher(page)).toHaveText('Dziś: 10h 10m');
+});
+
+// ---------------------------------------------------------------- export (003)
+
+const exportButton = (page: Page) => page.locator('.wt-export__button');
+const exportMenu = (page: Page) => page.locator('.wt-export__menu');
+
+/** A box with all four edges inside another, to the pixel. */
+function expectInside(
+  inner: { x: number; y: number; width: number; height: number },
+  outer: { x: number; y: number; width: number; height: number },
+): void {
+  expect(inner.x).toBeGreaterThanOrEqual(outer.x - 0.5);
+  expect(inner.y).toBeGreaterThanOrEqual(outer.y - 0.5);
+  expect(inner.x + inner.width).toBeLessThanOrEqual(outer.x + outer.width + 0.5);
+  expect(inner.y + inner.height).toBeLessThanOrEqual(outer.y + outer.height + 0.5);
+}
+
+/** Opens the export menu and checks that it stands above the button, inside the panel and the window. */
+async function expectMenuInPlace(page: Page): Promise<void> {
+  await exportButton(page).click();
+  await expect(exportMenu(page)).toBeVisible();
+  const menu = await exportMenu(page).boundingBox();
+  const button = await exportButton(page).boundingBox();
+  const frame = await panel(page).boundingBox();
+  const viewport = page.viewportSize();
+  if (!menu || !button || !frame || !viewport) throw new Error('the export menu is not laid out');
+  expect(menu.y + menu.height).toBeLessThanOrEqual(button.y);
+  // It hangs on the button: the same left edge, at least as wide, and no wider than a short
+  // list of two formats needs (it once took the whole width of the row).
+  expect(Math.abs(menu.x - button.x)).toBeLessThan(1);
+  expect(menu.width).toBeGreaterThanOrEqual(button.width - 0.5);
+  expect(menu.width).toBeLessThanOrEqual(Math.max(button.width, 160));
+  expectInside(menu, frame);
+  expectInside(menu, { x: 0, y: 0, width: viewport.width, height: viewport.height });
+  await page.keyboard.press('Escape');
+  await expect(exportMenu(page)).toBeHidden();
+}
+
+test('the export control shares the line of the total, also with the longest total (003 FR-001)', async ({ page }) => {
+  await openPanel(page);
+  await expect(exportButton(page)).toBeVisible();
+  const label = page.locator('.wt-footer__label');
+
+  for (const total of [null, '999h 59m']) {
+    if (total) await footerTotal(page).evaluate((node, text) => (node.textContent = text), total);
+    const button = await exportButton(page).boundingBox();
+    const name = await label.boundingBox();
+    const value = await footerTotal(page).boundingBox();
+    const footer = await page.locator('.wt-footer').boundingBox();
+    if (!button || !name || !value || !footer) throw new Error('the total row is not laid out');
+    // One line: the three stand side by side at the same height, and nothing is pushed out.
+    const middle = (box: { y: number; height: number }) => box.y + box.height / 2;
+    expect(Math.abs(middle(button) - middle(name))).toBeLessThan(2);
+    expect(Math.abs(middle(name) - middle(value))).toBeLessThan(2);
+    expect(button.x + button.width).toBeLessThanOrEqual(name.x);
+    expect(name.x + name.width).toBeLessThanOrEqual(value.x + 0.5);
+    expectInside(value, footer);
+    expectInside(button, footer);
+  }
+  await expectInsideWindow(page);
+});
+
+test('the export menu opens above its button, inside the panel and the window (003 FR-005)', async ({ page }) => {
+  await openPanel(page);
+  await expect(exportButton(page)).toBeVisible();
+  await expectMenuInPlace(page);
+  await expectInsideWindow(page);
+});
+
+test('the export menu fits into the lowest panel and into a panel below the launcher (003 FR-005)', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === 'phone', 'a phone has no room to move or resize the panel');
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  const store = (settings: object) =>
+    page.addInitScript((value) => localStorage.setItem('worktime.settings.v1', value), JSON.stringify(settings));
+  const base = {
+    refreshMinutes: 5,
+    theme: 'dark',
+    panelHeight: null,
+    panelWidth: null,
+    launcher: null,
+    lastPerson: null,
+  };
+
+  // The lowest panel.
+  await store({ ...base, panelHeight: 440 });
+  await openPanel(page);
+  await expect(exportButton(page)).toBeVisible();
+  expect(Math.round((await panel(page).boundingBox())?.height ?? 0)).toBe(440);
+  await expectMenuInPlace(page);
+
+  // The launcher near the top of the window: the panel hangs below it.
+  await store({ ...base, launcher: { right: 88, bottom: 900 } });
+  await openPanel(page);
+  await expect(exportButton(page)).toBeVisible();
+  await expect(panel(page)).toHaveAttribute('data-place-block', 'below');
+  await expectMenuInPlace(page);
+});
+
+test('the message that a file could not be made does not move the total (003 FR-009)', async ({ page }, testInfo) => {
+  await openPanel(page);
+  await expect(exportButton(page)).toBeVisible();
+  // Measured against the row: on a phone the whole panel scrolls under the pointer.
+  const inRow = async () => {
+    const total = await footerTotal(page).boundingBox();
+    const row = await page.locator('.wt-footer').boundingBox();
+    if (!total || !row) throw new Error('the total row is not laid out');
+    return { x: Math.round(total.x - row.x), y: Math.round(total.y - row.y), width: Math.round(total.width) };
+  };
+  const before = await inRow();
+
+  await page.evaluate(() => {
+    URL.createObjectURL = () => {
+      throw new Error('blocked');
+    };
+  });
+  await exportButton(page).click();
+  await page.getByRole('menuitem', { name: 'Eksport do pliku CSV' }).click();
+  const message = page.locator('.wt-export__message');
+  await expect(message).toHaveText('Nie udało się utworzyć pliku.');
+
+  const note = await message.boundingBox();
+  const button = await exportButton(page).boundingBox();
+  const footer = await page.locator('.wt-footer').boundingBox();
+  if (!note || !button || !footer) throw new Error('the total row is not laid out');
+  if (testInfo.project.name === 'phone') {
+    // No room beside the button: the message stands under it.
+    expect(note.y).toBeGreaterThanOrEqual(button.y + button.height - 1);
+  } else {
+    // Beside the button, on its line.
+    expect(note.x).toBeGreaterThanOrEqual(button.x + button.width);
+    expect(Math.abs(note.y + note.height / 2 - (button.y + button.height / 2))).toBeLessThan(2);
+  }
+  expectInside(note, footer);
+  // The total stands where it stood.
+  expect(await inRow()).toEqual(before);
+  await expectInsideWindow(page);
 });

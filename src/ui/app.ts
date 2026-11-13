@@ -10,6 +10,7 @@ import {
   type UserSettings,
 } from '../domain/settings';
 import { summarise } from '../domain/summary';
+import { buildFile, saveFile } from '../export/index';
 import type { JiraGateway, Session } from '../jira/gateway';
 import { findPeople, getPerson } from '../jira/people-finder';
 import { loadPeriod } from '../jira/worklog-loader';
@@ -30,6 +31,8 @@ export interface AppDeps {
   timers?: Timers;
   /** The document whose visibility pauses background refreshes. */
   doc?: Pick<Document, 'hidden' | 'addEventListener'>;
+  /** Hands an exported file to the browser; replaced in tests. */
+  saveFile?: typeof saveFile;
 }
 
 export interface App {
@@ -63,6 +66,7 @@ export async function mountApp(
   const now = deps.now ?? Date.now;
   const timers = deps.timers ?? browserTimers;
   const doc = deps.doc ?? document;
+  const save = deps.saveFile ?? saveFile;
 
   let session: Session;
   try {
@@ -134,7 +138,14 @@ export async function mountApp(
     onCustom: (period) => void controller().selectCustom(period),
   });
   const progress = createProgress({ onSelect: (period) => void controller().selectPart(period) });
-  const table = createTable();
+  const table = createTable({
+    // The file is made from what the table shows, for the person named above it, and the
+    // download link lives inside the add-on's own element (003 FR-011, FR-012).
+    onExport: (format, view) =>
+      save(buildFile({ ...view, personName: choice.person.displayName }, format, new Date(now())), root),
+    // The export control was switched off under the keyboard (003 FR-030).
+    onFocusLost: () => header.focusFallback(),
+  });
 
   const panel = el(
     'section',
@@ -242,6 +253,7 @@ export async function mountApp(
   function minimise(): void {
     if (!isOpen()) return;
     popover.cancel();
+    table.closeMenu();
     panel.hidden = true;
     launcher.setExpanded(false);
     controller().setActive(false);

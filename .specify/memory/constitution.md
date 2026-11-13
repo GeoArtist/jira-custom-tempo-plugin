@@ -8,13 +8,19 @@ The plugin MUST stay small enough to load fast inside Jira on a mobile connectio
 
 - The compiled output of the TypeScript and SCSS sources required for the first render MUST
   total at most 100 KB gzipped.
+- Exception: the code that only the export of the table to a file uses (making the CSV and
+  XLSX files) is outside this budget and has no size limit. It MUST be built so that the
+  build can measure it apart from the rest, and its size MUST be reported on every build.
+  The control that starts an export is part of the panel and counts toward the budget.
 - The size of the shipped artifact MUST be measured on every build and the build MUST fail
   when the budget is exceeded.
 - Code, assets, and fonts that no shipped feature uses MUST NOT be included in the artifact.
 - Images and icons MUST be vector (SVG) or compressed raster; no unoptimized media.
 
 Rationale: the plugin is added to every Jira page the user opens, and those pages are
-already heavy. Every added kilobyte is paid on each page load.
+already heavy. Every added kilobyte is paid on each page load. The export is the one
+exception: a formatted spreadsheet file cannot be relied on to fit into the budget, and a
+user asks for it rarely, on purpose, and from a panel that is already open.
 
 ### II. Minimal Dependencies
 
@@ -173,4 +179,4 @@ This constitution supersedes other project practices and conventions where they 
 - Numeric budgets in this document (size, viewport range, touch target size) are changed
   only through the amendment procedure.
 
-**Version**: 3.0.0 | **Ratified**: 2026-11-12 | **Last Amended**: 2026-11-12
+**Version**: 3.1.0 | **Ratified**: 2026-11-12 | **Last Amended**: 2026-11-13

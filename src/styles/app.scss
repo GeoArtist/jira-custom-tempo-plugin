@@ -837,7 +837,7 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   flex-direction: column;
   // Room for the column headers, one row, and the total row, even in a panel the window
   // made lower: such a panel scrolls.
-  min-height: 124px;
+  min-height: 130px;
   border-top: var(--wt-line) solid var(--wt-border);
 
   > * {
@@ -1106,16 +1106,126 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
 
 .wt-footer {
   display: flex;
-  align-items: baseline;
-  // Label and value sit together at the right edge, in one colour (FR-062).
+  // The parts stand on the first line of the row. When the message of the export control
+  // wraps under its button and the row grows, the total stays where it was (003 FR-009).
+  align-items: flex-start;
+  // Label and value sit together at the right edge, in one colour (FR-062); the export
+  // control takes the left edge (003 FR-001).
   justify-content: flex-end;
   gap: var(--wt-space-2);
-  padding: var(--wt-space-3) var(--wt-space-5);
+  // As high as with the export button, also while there is none: the row does not jump.
+  min-height: calc(var(--wt-control) + 2 * var(--wt-space-2) + var(--wt-line));
+  padding: var(--wt-space-2) var(--wt-space-5);
   border-top: var(--wt-line) solid var(--wt-border);
   font-weight: var(--wt-weight-bold);
 
+  @include base.touch-size {
+    min-height: calc(var(--wt-touch) + 2 * var(--wt-space-2) + var(--wt-line));
+  }
+
   @media (max-width: $narrow) {
-    padding: var(--wt-space-3);
+    padding: var(--wt-space-2) var(--wt-space-3);
+  }
+}
+
+// As high as a control, with the text at mid-height: level with the export button beside.
+.wt-footer__label,
+.wt-footer__value {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--wt-control);
+
+  @include base.touch-size {
+    min-height: var(--wt-touch);
+  }
+}
+
+// ---------------------------------------------------------------- export (003)
+
+// The left group of the total row: the button, its menu, and the message that a file could
+// not be made. It takes the room the total leaves, so the message wraps under the button
+// when it does not fit beside it (003 FR-009).
+.wt-export {
+  display: flex;
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wt-space-1) var(--wt-space-2);
+  min-width: 0;
+  font-weight: var(--wt-weight-normal);
+}
+
+.wt-export__button {
+  // Switched off while a load covers the rows: the look of a history button with nowhere
+  // to go (003 FR-003).
+  &:disabled {
+    cursor: default;
+    opacity: 0.4;
+  }
+
+  // The menu is open: the look of a selected control.
+  &[aria-expanded='true'] {
+    border-color: var(--wt-accent);
+    background: var(--wt-accent);
+    color: var(--wt-on-accent);
+  }
+}
+
+// The button with its menu: the menu hangs on the button and is at least as wide.
+.wt-export__anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+// Opens upward, over the last rows of the table (003 FR-005).
+.wt-export__menu {
+  position: absolute;
+  bottom: calc(100% + var(--wt-space-1));
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-width: 100%;
+  padding: var(--wt-space-1);
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-sm);
+  background: var(--wt-surface-raised);
+  box-shadow: var(--wt-shadow);
+}
+
+.wt-export__item {
+  display: flex;
+  align-items: center;
+  min-height: var(--wt-control);
+  padding: 0 var(--wt-space-3);
+  border: 0;
+  border-radius: var(--wt-radius-sm);
+  background: none;
+  color: var(--wt-text);
+  font: inherit;
+  font-size: var(--wt-text-sm);
+  font-weight: var(--wt-weight-medium);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+
+  @include base.touch-size {
+    min-height: var(--wt-touch);
+    min-width: var(--wt-touch);
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: var(--wt-hover);
+  }
+}
+
+.wt-export__message {
+  color: var(--wt-danger);
+  font-size: var(--wt-text-sm);
+
+  &:empty {
+    display: none;
   }
 }
 
@@ -1307,6 +1417,13 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
 .wt-button[aria-disabled='true'] {
   opacity: 0.6;
   pointer-events: none;
+}
+
+// The refresh button during a load is switched off in the same way (003 FR-030). It keeps
+// the pointer it always had then; a click on it does nothing.
+.wt-header__actions .wt-button[aria-disabled='true'] {
+  cursor: progress;
+  pointer-events: auto;
 }
 
 // The people a name fits, for the user to pick one (002 FR-030). It is the one part of the

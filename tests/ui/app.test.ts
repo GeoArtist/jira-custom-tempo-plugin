@@ -65,6 +65,8 @@ async function mountOpen(gateway: FakeGateway, settings?: object) {
 }
 
 const text = (root: Element, selector: string) => root.querySelector(selector)?.textContent;
+/** The label and the value of the total row; the row also holds the export control (003). */
+const footerText = (root: Element) => `${text(root, '.wt-footer__label')}${text(root, '.wt-footer__value')}`;
 const rowKeys = (root: Element) => [...root.querySelectorAll('tbody tr a')].map((a) => a.textContent);
 const button = (root: Element, label: string) =>
   [...root.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent === label);
@@ -170,7 +172,7 @@ describe('opening the panel', () => {
     expect(controller.state).toBe('ready');
     expect(text(root, '.wt-title')).toBe('Piątek 06-11-2026 · 10h 10m');
     expect(rowKeys(root)).toEqual(['AM-10234', 'AM-20012', 'AM-10087']);
-    expect(text(root, '.wt-footer')).toBe('Suma czasu:10h 10m');
+    expect(footerText(root)).toBe('Suma czasu:10h 10m');
     expect(root.querySelector<HTMLInputElement>('#wt-day')?.value).toBe('2026-11-06');
   });
 
@@ -196,7 +198,7 @@ describe('opening the panel', () => {
     expect(controller.period.preset).toBe('today');
     expect(text(root, '.wt-title')).toBe('Piątek 06-11-2026 · 10h 10m');
     expect(rowKeys(root)).toEqual(['AM-10234', 'AM-20012', 'AM-10087']);
-    expect(text(root, '.wt-footer')).toBe('Suma czasu:10h 10m');
+    expect(footerText(root)).toBe('Suma czasu:10h 10m');
     expect(root.querySelector('.wt-progress')?.classList.contains('wt-progress--chart')).toBe(false);
     expect(root.querySelector<HTMLInputElement>('#wt-day')?.value).toBe('2026-11-06');
     expect(launcher(root).textContent).toBe('Dziś: 10h 10m');
@@ -602,13 +604,14 @@ describe('refresh', () => {
 
     refresh.click();
     await flush();
-    expect(refresh.disabled).toBe(true);
+    // Switched off, but not `disabled`: it keeps the keyboard focus (003 FR-030).
+    expect([refresh.getAttribute('aria-disabled'), refresh.disabled]).toEqual(['true', false]);
     expect(rowKeys(root)).toHaveLength(3);
-    expect(text(root, '.wt-footer')).toBe('Suma czasu:10h 10m');
+    expect(footerText(root)).toBe('Suma czasu:10h 10m');
 
     slow.release({ json: search });
     await flush(80);
-    expect(refresh.disabled).toBe(false);
+    expect(refresh.hasAttribute('aria-disabled')).toBe(false);
     expect(controller.period.preset).toBe('today');
     expect(controller.state).toBe('ready');
   });

@@ -11,7 +11,7 @@
 // The look under the pointer (FR-065). The transition belongs to the hover state only, so
 // a change of theme repaints at once and only the pointer coming in is animated.
 @mixin hover {
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled, [aria-disabled='true']) {
     transition:
       background-color 0.15s ease,
       border-color 0.15s ease,

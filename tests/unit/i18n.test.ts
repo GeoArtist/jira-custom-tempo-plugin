@@ -43,6 +43,28 @@ describe('Polish texts', () => {
     expect(texts.filter((text) => !module.includes(`'${text}'`))).toEqual([]);
   });
 
+  it('contain every text of spec 003 (FR-028)', () => {
+    const spec = read('specs/003-table-export/spec.md');
+    const table = spec.slice(spec.indexOf('- **FR-028**'), spec.indexOf('- **FR-029**'));
+    const texts = table
+      .split('\n')
+      .filter((line) => line.trim().startsWith('|') && !line.includes('| Element') && !line.includes('|---'))
+      .flatMap((line) => [...(line.split('|')[2] ?? '').matchAll(/`([^`]+)`/g)].map((match) => match[1] ?? ''));
+    expect(texts).toEqual([
+      'Eksport',
+      '*.csv',
+      'Eksport do pliku CSV',
+      '*.xlsx',
+      'Eksport do pliku XLSX',
+      'Tworzenie pliku…',
+      'Nie udało się utworzyć pliku.',
+      'Raport',
+    ]);
+
+    const module = read('src/i18n/pl.ts');
+    expect(texts.filter((text) => !module.includes(`'${text}'`))).toEqual([]);
+  });
+
   it('live only in src/i18n/pl.ts', () => {
     const offenders = sourceFiles(join(root, 'src'))
       .filter((path) => !path.endsWith(join('i18n', 'pl.ts')))

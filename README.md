@@ -38,6 +38,10 @@ the views; the round arrows beside the rows move to the previous and next month.
 
 <img src="docs/screenshots/month.png" alt="A month: one bar per day" width="760">
 
+**Export.** "Eksport" in the total row saves the table as a CSV or as an XLSX file.
+
+<img src="docs/screenshots/export.png" alt="The export menu with the two formats" width="760">
+
 **Settings.** The auto-refresh interval and the dark / light switch.
 
 <img src="docs/screenshots/settings.png" alt="The settings pop-over" width="760">
@@ -65,6 +69,14 @@ the views; the round arrows beside the rows move to the previous and next month.
 - **Back and forward**: "Cofnij" and "Ponów" beside "Odśwież" return to the views you were
   on, up to 10 steps back, without asking Jira again.
 - **Refresh**: "Odśwież" reloads the data. Auto-refresh runs every 5 minutes by default.
+- **Export**: "Eksport" at the left of the total row saves the table on screen as a file.
+  "*.csv" is a header and one line per ticket, separated by semicolons, which Excel with
+  Polish settings opens by itself. "*.xlsx" is a formatted sheet: the name, the period, and
+  the total above the table, the columns and colours of the panel, borders, a total row,
+  and sums the spreadsheet can add up. The file is named after the person and the period,
+  for example `Jan_Kowalski_01-11-2026_30-11-2026_tempo_report.xlsx`. It is made in your
+  browser from what is on screen: nothing is asked of Jira and nothing is sent anywhere.
+  The control is there only while the table has rows.
 - **Settings** (gear): the auto-refresh interval in minutes (0 turns it off), the dark /
   light switch (default dark), and whose time is shown.
 - **Another person**: in the settings choose "Inny użytkownik", type a colleague's first
@@ -124,7 +136,7 @@ install an extension from a file in any other way.
 | `vp run dev` | Serves a stand-in Jira page with the add-on and a faked Jira at `http://127.0.0.1:5173/`. The sample data is dated 2 to 6 November 2026, so click "Tydzień" and then the previous arrow. |
 | `vp test run` | Unit and UI tests. No Jira needed. |
 | `vp check` | Format, lint, and type checks (`vp check --fix` repairs formatting) |
-| `vp run build` | Builds `dist/extension` (with a copy of `BrowserInstallation.md`) and fails if it is over 100 kB gzipped |
+| `vp run build` | Builds `dist/extension` (with a copy of `BrowserInstallation.md`), builds the script once more without the export code into `dist-core` (never shipped, only measured), and fails if that core is over 100 kB gzipped. The size of the export code is printed and has no limit (constitution 3.1.0). |
 | `vp run test:e2e` | Browser tests: the stand-in page at 320 px, 1280 px, and 1920 px, and the real extension loaded into Chromium |
 | `vp run check` | All of the above: the full gate before a merge |
 | `vp run package` | Builds and packs the zip file |
@@ -145,6 +157,12 @@ finds the person, and a name nobody has gives the alert. The results are in
 `specs/001-worktime-panel/research.md` and the walkthrough in
 `specs/001-worktime-panel/quickstart.md` have not been recorded one by one yet.
 
+The export is covered by the automated tests, including downloads from the built extension
+on a page with a strict content security policy. It has not been tried on a real Jira Cloud
+site yet, and the files have not been opened in Microsoft Excel, LibreOffice Calc, and
+Google Sheets yet (checks X12 to X14 in `specs/003-table-export/research.md`). Do these
+before a release.
+
 ## Known limits
 
 - Jira Cloud only, on addresses under `atlassian.net`. A site on a custom domain needs that
@@ -161,6 +179,16 @@ finds the person, and a name nobody has gives the alert. The results are in
 - A time entry saved a few seconds ago can be missing from one refresh and appear on the next.
 - The "Od:" and "Do:" fields use the browser's own date-time control, so they follow the
   browser's date format.
+- Export:
+  - The file holds what the table shows: one line or row per ticket, with all its time
+    entries in one field or cell. There is no file with one line per time entry.
+  - The CSV file is text throughout, without a total. In the XLSX file the sums are
+    numbers shown as "6h 55m"; the time entries stay text.
+  - The browser decides where the file goes and what it is called when a file of that name
+    exists. When the browser blocks downloads, no file appears.
+  - A full name longer than 100 characters is not cut: the file name carries the surname
+    alone (the last word), or only the dates when that is too long as well.
+  - "Odśwież" keeps the keyboard focus while a load runs; it is switched off meanwhile.
 - Another person's time:
   - You see what Jira lets you see: time logged on tickets you can view. Looking people up
     needs Jira's "Browse users and groups" permission; without it every name is reported
@@ -178,7 +206,8 @@ finds the person, and a name nobody has gives the alert. The results are in
 
 ## Project documents
 
-Everything about the panel is in `specs/001-worktime-panel/`, and everything about the time
-of another person in `specs/002-other-user-worktime/`: `spec.md` (requirements), `plan.md`
+Everything about the panel is in `specs/001-worktime-panel/`, everything about the time of
+another person in `specs/002-other-user-worktime/`, and everything about the export in
+`specs/003-table-export/`: `spec.md` (requirements), `plan.md`
 (design), `research.md` (decisions and open checks), `data-model.md`, `contracts/`,
 `quickstart.md`, and `tasks.md`. Project rules are in `.specify/memory/constitution.md`.

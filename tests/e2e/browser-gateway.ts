@@ -4,9 +4,12 @@
 //             |long-name      (the signed-in user has a very long name)
 //             |people-many    (12 more people named Kowalski, for the list of people)
 //             |people-offline (the search of people fails)
+//             |special-titles (titles that test the export: a formula, a semicolon, a line break)
+//             |tickets-500    (one day with 500 tickets)
 //             |showcase   (a whole year of plausible work, for the screenshots of the README)
 //   &delay=<ms>    how long each fake Jira request takes
 // With refresh-changes, 30 more minutes appear once the test sets window.__moreLogged.
+// In every scenario the fake Jira stops answering once the test sets window.__jiraDown.
 // Every scenario knows a few colleagues, so the time of another person can be shown
 // (specs/002-other-user-worktime/quickstart.md, "Test data").
 // The tests fix the browser clock at Friday 6 November 2026, 12:00 in Warsaw.
@@ -37,6 +40,8 @@ declare global {
     __jiraRequests: string[];
     /** Set by a test to pretend that more time was logged in Jira meanwhile. */
     __moreLogged?: boolean;
+    /** Set by a test to make every later request to the fake Jira fail. */
+    __jiraDown?: boolean;
   }
 }
 
@@ -206,6 +211,40 @@ function scenario(name: string): Scenario {
       return hours(20);
     case 'month':
       return month();
+    case 'special-titles':
+      // Titles that test the two export formats (specs/003-table-export/quickstart.md, V17).
+      return {
+        issues: [
+          issue('1', 'AM-1', '=1+1'),
+          issue('2', 'AM-2', ' -5 dni'),
+          issue('3', 'AM-3', 'Raport; wersja "B"'),
+          issue('4', 'AM-4', 'Pierwsza linia\nDruga linia'),
+          issue('5', 'AM-5', ''),
+          issue('6', 'AM-6', 'Dwa wpisy'),
+        ],
+        logs: [
+          log('1', 6, '07:00', 30),
+          log('2', 6, '08:00', 30),
+          log('3', 6, '09:00', 30),
+          log('4', 6, '10:00', 30),
+          log('5', 6, '11:00', 30),
+          log('6', 6, '12:00', 30),
+          log('6', 6, '13:00', 45),
+        ],
+      };
+    case 'tickets-500': {
+      // One day with 500 tickets, five minutes each (003 SC-001).
+      const issues: Issue[] = [];
+      const logs: Log[] = [];
+      for (let index = 0; index < 500; index += 1) {
+        const id = String(1000 + index);
+        issues.push(issue(id, `AM-${30000 + index}`, `Zgloszenie numer ${index + 1} z opisem zakresu prac`));
+        const minute = index * 2;
+        const time = `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`;
+        logs.push(log(id, 6, time, 5));
+      }
+      return { issues, logs };
+    }
     case 'refresh-changes': {
       // Once the test says so, 30 more minutes are logged on the last ticket.
       const data = today();
@@ -313,6 +352,8 @@ export function createGateway(): JiraGateway {
       // A short delay, so loading states are observable.
       await new Promise((resolve) => setTimeout(resolve, Number(params.get('delay') ?? 20)));
       if (scenarioName === 'error') return reply(500);
+      // Jira stops answering once the test says so: a refresh fails with rows on screen.
+      if (window.__jiraDown) return reply(500);
 
       if (path.startsWith('/rest/api/3/search/jql')) {
         nextLogId = 1;

@@ -38,6 +38,8 @@
 
 **Amended by 002-other-user-worktime (2026-11-13)**: the panel can show the time of another person of the same Jira site, chosen by name in the settings ([spec 002](../002-other-user-worktime/spec.md)). FR-001 is replaced by 002 FR-001: the entries shown are those of the selected person, by default the signed-in user. The assumption "Only the current user's time is shown; viewing other people's time and team reports are out of scope" no longer holds for a single other person; team reports stay out of scope. FR-070 is narrowed: nothing stands under the title, but the name of the person stands on a line above it (002 FR-006). FR-060 does not apply to a change of person: the table is emptied at once (002 FR-003).
 
+**Amended by 003-table-export (2026-11-13)**: the total row of FR-014 carries, at its left edge, a control "Eksport" that saves the table on screen as a CSV or an XLSX file ([spec 003](../003-table-export/spec.md)); the label "Suma czasu:" and its value keep their place at the right edge (FR-062), and the row is as high as a control. "Odśwież" is still switched off while a load runs, but it keeps the keyboard focus (003 FR-030).
+
 ## Inspiration Images
 
 The two mock-ups supplied with the request are stored with this spec. They show the intended look

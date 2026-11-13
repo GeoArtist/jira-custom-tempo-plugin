@@ -4,6 +4,7 @@ node_modules/
 # Build output
 dist/
 dist-e2e/
+dist-core/
 
 # Test output
 test-results/

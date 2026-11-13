@@ -1,11 +1,31 @@
 // The table of tickets with sortable columns, its loading / empty / error states, and the
-// total row (FR-002 to FR-011, FR-014, FR-037, FR-060 to FR-063).
+// total row (FR-002 to FR-011, FR-014, FR-037, FR-060 to FR-063). The total row also carries
+// the export control, whose state follows what the table shows (003 FR-001 to FR-004).
 import { formatDuration, formatEntry } from '../domain/format';
 import type { Period } from '../domain/period';
 import type { PeriodSummary } from '../domain/summary';
 import type { TicketRow } from '../domain/worklog';
+import type { ExportFormat } from '../export/index';
 import { pl } from '../i18n/pl';
 import { applyTotal, clear, el } from './dom';
+import { createExportMenu } from './export-menu';
+
+/** What the table has on screen: the only source of an exported file (003 FR-011). */
+export interface ShownView {
+  /** The rows on screen, in the order on screen. */
+  rows: TicketRow[];
+  /** The period these rows were drawn for; during a load it is not the controller's. */
+  period: Period;
+  timeZone: string;
+  summary: PeriodSummary;
+}
+
+export interface TableOptions {
+  /** A format was chosen in the export menu. May throw: the file could not be made. */
+  onExport?(format: ExportFormat, view: ShownView): void;
+  /** The export control lost its use while it had the keyboard focus (003 FR-030). */
+  onFocusLost?(): void;
+}
 
 export interface Table {
   element: HTMLElement;
@@ -19,6 +39,8 @@ export interface Table {
   showLoading(): void;
   /** The load failed. With `keepRows` the last data stays visible under the message. */
   showError(onRetry: () => void, keepRows: boolean): void;
+  /** Closes the export menu without a choice; the panel is being hidden. */
+  closeMenu(): void;
 }
 
 export type SortColumn = 'ticket' | 'title' | 'entries' | 'sum';
@@ -61,10 +83,10 @@ const PENDING = '…';
 /** Nothing loaded: a zero total in the muted colour. */
 const EMPTY = { totalSeconds: 0, colour: null } as PeriodSummary;
 
-export function createTable(): Table {
+export function createTable(options: TableOptions = {}): Table {
   // The order the rows are loaded in (FR-009) is the entries column ascending.
   let sort: { column: SortColumn; direction: SortDirection } = { column: 'entries', direction: 'ascending' };
-  let shown: { rows: TicketRow[]; period: Period; timeZone: string } | null = null;
+  let shown: ShownView | null = null;
 
   const headers = new Map<SortColumn, { cell: HTMLTableCellElement; button: HTMLButtonElement }>();
   for (const column of COLUMNS) {
@@ -98,7 +120,16 @@ export function createTable(): Table {
   const area = el('div', { class: 'wt-table-area' }, [message, scroll, spinner]);
   const totalLabel = el('span', { class: 'wt-footer__label', text: pl.total });
   const total = el('span', { class: 'wt-footer__value wt-total', text: formatDuration(0) });
-  const footer = el('div', { class: 'wt-footer' }, [totalLabel, total]);
+  const exportMenu = createExportMenu({
+    onChoose: (format) => {
+      if (!shown) return;
+      // The file holds the rows as they stand on screen, in their order (003 FR-011).
+      options.onExport?.(format, { ...shown, rows: sortRows(shown.rows, sort.column, sort.direction) });
+    },
+    onFocusLost: () => options.onFocusLost?.(),
+  });
+  // Its place is kept also while the button is not shown: the row never changes its height.
+  const footer = el('div', { class: 'wt-footer' }, [exportMenu.element, totalLabel, total]);
   const element = el('section', { class: 'wt-table-wrap' }, [area, footer]);
 
   function setTotal(summary: PeriodSummary): void {
@@ -165,6 +196,9 @@ export function createTable(): Table {
     }
   }
 
+  /** True while rows are drawn and visible: only then is there something to export. */
+  const rowsOnScreen = (): boolean => shown !== null && shown.rows.length > 0 && !scroll.hidden;
+
   function sortBy(column: SortColumn): void {
     const flip = sort.column === column && sort.direction === 'ascending';
     sort = { column, direction: flip ? 'descending' : 'ascending' };
@@ -177,12 +211,13 @@ export function createTable(): Table {
   return {
     element,
     render(rows, period, timeZone, summary) {
-      shown = { rows, period, timeZone };
+      shown = { rows, period, timeZone, summary };
       renderBody();
       setTotal(summary);
       setBusy(false);
       scroll.hidden = rows.length === 0;
       setMessage(rows.length > 0 ? null : 'empty');
+      exportMenu.setState(rows.length > 0 ? 'enabled' : 'absent');
     },
     clear() {
       shown = null;
@@ -192,9 +227,12 @@ export function createTable(): Table {
       applyTotal(totalLabel, null);
       scroll.hidden = true;
       setMessage(null);
+      exportMenu.setState('absent');
     },
     showLoading() {
       setBusy(true);
+      // The rows under the spinner may belong to another period than the title names.
+      exportMenu.setState(rowsOnScreen() ? 'disabled' : 'absent');
     },
     showError(onRetry, keepRows) {
       if (!keepRows) {
@@ -206,6 +244,11 @@ export function createTable(): Table {
       setBusy(false);
       scroll.hidden = !(keepRows && body.childElementCount > 0);
       setMessage('error', onRetry);
+      // After a failed refresh the rows of the last load are still what the user sees.
+      exportMenu.setState(rowsOnScreen() ? 'enabled' : 'absent');
+    },
+    closeMenu() {
+      exportMenu.close();
     },
   };
 }

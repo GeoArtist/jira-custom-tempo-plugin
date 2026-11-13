@@ -166,3 +166,45 @@ test('"Zapisz" says that it is checking while Jira is asked', async ({ page }) =
   await expect(page.locator('.wt-popover')).toBeHidden();
   await expect(page.locator('.wt-person')).toHaveText('Piotr Nowakowski');
 });
+
+test('the export control and its menu are named, sized, and focusable (003 FR-007, FR-008)', async ({
+  page,
+}, testInfo) => {
+  await openPanel(page);
+  const control = page.getByRole('button', { name: 'Eksport', exact: true });
+  await expect(control).toBeVisible();
+  await expect(control).toHaveAttribute('aria-haspopup', 'menu');
+  await expect(control).toHaveAttribute('aria-expanded', 'false');
+
+  // Opened by keyboard, so the focus ring of the first format shows.
+  await control.focus();
+  await page.keyboard.press('ArrowDown');
+  const menu = page.getByRole('menu', { name: 'Eksport' });
+  await expect(menu).toBeVisible();
+  await expect(control).toHaveAttribute('aria-expanded', 'true');
+  const items = menu.getByRole('menuitem');
+  await expect(items).toHaveText(['*.csv', '*.xlsx']);
+  await expect(page.getByRole('menuitem', { name: 'Eksport do pliku CSV' })).toBeFocused();
+  await expect(page.getByRole('menuitem', { name: 'Eksport do pliku XLSX' })).toBeVisible();
+
+  const ring = () =>
+    page.evaluate(() => {
+      const node = document.getElementById('jira-custom-tempo')?.shadowRoot?.activeElement as HTMLElement;
+      const style = getComputedStyle(node);
+      return style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) >= 2;
+    });
+  expect(await ring()).toBe(true);
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: 'Eksport do pliku XLSX' })).toBeFocused();
+  expect(await ring()).toBe(true);
+
+  if (testInfo.project.name === 'phone') {
+    // The button and both formats are touch targets.
+    expect(await tooSmall(page)).toEqual([]);
+  }
+
+  await page.keyboard.press('Escape');
+  await expect(control).toBeFocused();
+  await expect(control).toHaveAttribute('aria-expanded', 'false');
+  expect(await ring()).toBe(true);
+});

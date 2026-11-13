@@ -1,6 +1,7 @@
 // Every user-visible text of the app. No other source file may contain Polish text.
-// Wording is fixed by specs/001-worktime-panel/contracts/ui.md and, for the texts about
-// the selected person, by specs/002-other-user-worktime/spec.md (FR-029).
+// Wording is fixed by specs/001-worktime-panel/contracts/ui.md, for the texts about the
+// selected person by specs/002-other-user-worktime/spec.md (FR-029), and for the export by
+// specs/003-table-export/spec.md (FR-028).
 
 export const pl = {
   back: 'Cofnij',
@@ -60,6 +61,15 @@ export const pl = {
   personChecking: 'Sprawdzanie…',
   personChoose: 'Znaleziono kilka osób. Wybierz jedną:',
   personTooMany: 'Pokazano 10 pierwszych osób. Wpisz dokładniejsze imię i nazwisko.',
+
+  exportLabel: 'Eksport',
+  exportCsv: '*.csv',
+  exportCsvLabel: 'Eksport do pliku CSV',
+  exportXlsx: '*.xlsx',
+  exportXlsxLabel: 'Eksport do pliku XLSX',
+  exportBusy: 'Tworzenie pliku…',
+  exportFailed: 'Nie udało się utworzyć pliku.',
+  exportSheet: 'Raport',
 
   launcherLabel: 'Dziś:',
   launcherRange: 'Zakres:',

@@ -127,14 +127,54 @@ describe('header', () => {
     expect(handlers.onSettings).toHaveBeenCalledOnce();
   });
 
-  it('disables refresh while a load is running', () => {
-    const { header } = build();
-    const refresh = [...header.element.querySelectorAll('button')].find((b) => b.textContent === 'Odśwież');
+  it('switches refresh off while a load is running, without taking it out of the keyboard order', () => {
+    const { header, handlers } = build();
+    document.body.appendChild(header.element);
+    const refresh = [...header.element.querySelectorAll('button')].find(
+      (b) => b.textContent === 'Odśwież',
+    ) as HTMLButtonElement;
+    refresh.focus();
+
     header.setBusy(true);
-    expect(refresh?.disabled).toBe(true);
-    expect(refresh?.getAttribute('aria-busy')).toBe('true');
+    expect(refresh.getAttribute('aria-disabled')).toBe('true');
+    expect(refresh.getAttribute('aria-busy')).toBe('true');
+    // Not `disabled`: the focus stays where it is (003 FR-030).
+    expect(refresh.disabled).toBe(false);
+    expect(document.activeElement).toBe(refresh);
+    refresh.click();
+    expect(handlers.onRefresh).not.toHaveBeenCalled();
+
     header.setBusy(false);
-    expect(refresh?.disabled).toBe(false);
+    expect(refresh.hasAttribute('aria-disabled')).toBe(false);
+    expect(refresh.getAttribute('aria-busy')).toBe('false');
+    expect(document.activeElement).toBe(refresh);
+    refresh.click();
+    expect(handlers.onRefresh).toHaveBeenCalledOnce();
+    header.element.remove();
+  });
+
+  it('takes the focus from a control that lost its use: back, or refresh when back is off', () => {
+    const { header } = build();
+    document.body.appendChild(header.element);
+    const back = byLabel(header.element, 'Cofnij') as HTMLButtonElement;
+    const refresh = [...header.element.querySelectorAll('button')].find(
+      (b) => b.textContent === 'Odśwież',
+    ) as HTMLButtonElement;
+
+    // The first view: nothing to go back to.
+    header.focusFallback();
+    expect(document.activeElement).toBe(refresh);
+
+    // Also while a load runs.
+    header.setBusy(true);
+    (byLabel(header.element, 'Zamknij') as HTMLButtonElement).focus();
+    header.focusFallback();
+    expect(document.activeElement).toBe(refresh);
+
+    header.setHistory(true, false);
+    header.focusFallback();
+    expect(document.activeElement).toBe(back);
+    header.element.remove();
   });
 
   it('has a close button that calls its handler and takes the focus when the panel opens', () => {

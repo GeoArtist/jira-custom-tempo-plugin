@@ -102,6 +102,13 @@ try {
   await page.mouse.move(0, 0);
   await shoot(page, 'day');
 
+  // The export menu with its two formats, in the total row.
+  await page.locator('.wt-export__button').click();
+  await page.locator('.wt-export__menu').waitFor();
+  await page.mouse.move(0, 0);
+  await shoot(page, 'export');
+  await page.keyboard.press('Escape');
+
   // A week: one bar per day, with the tip of the bar under the pointer.
   await button(page, 'Tydzień').click();
   await page.locator('.wt-chart__bar').nth(6).waitFor({ state: 'attached' });

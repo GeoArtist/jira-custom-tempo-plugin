@@ -13,11 +13,23 @@ test('refresh shows newly logged time and keeps the old rows visible meanwhile',
   const refresh = page.getByRole('button', { name: 'Odśwież' });
   await refresh.click();
   await expect(refresh).toBeDisabled();
+  // Switched off, but not taken out of the keyboard order: it keeps the focus, and a second
+  // activation starts no second load (003 FR-030).
+  await expect(refresh).toHaveAttribute('aria-disabled', 'true');
+  expect(await refresh.evaluate((node) => (node as HTMLButtonElement).disabled)).toBe(false);
+  await expect(refresh).toBeFocused();
+  const searches = () =>
+    page.evaluate(() => window.__jiraRequests.filter((path) => path.startsWith('/rest/api/3/search')).length);
+  const sent = await searches();
+  await refresh.dispatchEvent('click');
+  await page.keyboard.press('Enter');
+  expect(await searches()).toBe(sent);
   await expect(rows(page)).toHaveCount(3);
   await expect(footerTotal(page)).toHaveText('10h 10m');
 
   await expect(footerTotal(page)).toHaveText('10h 40m');
   await expect(refresh).toBeEnabled();
+  await expect(refresh).toBeFocused();
   await expect(page.locator('.wt-table tbody .wt-col-sum').last()).toHaveText('2h 00m');
   await expect(page.locator('.wt-title')).toHaveText('Piątek 06-11-2026 · 10h 40m');
   // The launcher follows the panel.

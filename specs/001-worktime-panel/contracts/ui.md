@@ -312,7 +312,10 @@ Sizes are in px, because `rem` would follow the Jira page's root font size.
   text and restores the previous values (FR-027).
 - "Dzień:" shows the day when the period is exactly one whole day and is empty otherwise
   (FR-057).
-- "Odśwież" is disabled while a load is running and shows the loading indication.
+- "Odśwież" is switched off while a load is running and shows the loading indication: it
+  looks disabled, is announced as unavailable and busy, and does nothing when activated,
+  but it can hold the keyboard focus and keeps it (changed by 003 FR-030; until then it
+  was disabled and lost the focus).
 - "Minimalizuj" hides the panel like the launcher and Escape do and moves the focus to the
   launcher; nothing is forgotten (FR-064, FR-086).
 - "Cofnij" and "Ponów" are disabled when there is no view to go to: 40% opacity, default

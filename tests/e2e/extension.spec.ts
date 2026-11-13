@@ -223,6 +223,60 @@ test.describe('the built extension on a Jira Cloud address', () => {
     }
   });
 
+  test('saves the table as a CSV and as an XLSX file, without a request and without a permission', async () => {
+    const { context, requests, urls } = await jiraWithExtension(true);
+    try {
+      const page = await context.newPage();
+      await page.goto(`${SITE}/jira/your-work`);
+      await page.locator('.wt-launcher').click();
+      await expect(page.locator('.wt-table tbody a.wt-key')).toHaveText(['AM-10234', 'AM-20012']);
+      const control = page.locator('.wt-export__button');
+      await expect(control).toBeVisible();
+
+      // The content script has its own clock: the name carries the real day, in Warsaw.
+      const [day, month, year] = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Warsaw' })
+        .format(new Date())
+        .split('/');
+      const base = `Jan_Kowalski_${day}-${month}-${year}_tempo_report`;
+      const before = { requests: requests.length, urls: urls.filter((url) => !url.startsWith('blob:')).length };
+
+      await control.click();
+      const [csv] = await Promise.all([
+        page.waitForEvent('download'),
+        page.getByRole('menuitem', { name: 'Eksport do pliku CSV' }).click(),
+      ]);
+      expect(csv.suggestedFilename()).toBe(`${base}.csv`);
+      const text = readFileSync(await csv.path());
+      expect([...text.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+      const lines = text.subarray(3).toString('utf8').split('\r\n');
+      expect(lines[0]).toBe('Zgłoszenie;Tytuł;Czas wpisów;Suma');
+      expect(lines.slice(1, 3).map((line) => line.split(';')[0])).toEqual(['AM-10234', 'AM-20012']);
+
+      await control.click();
+      const [xlsx] = await Promise.all([
+        page.waitForEvent('download'),
+        page.getByRole('menuitem', { name: 'Eksport do pliku XLSX' }).click(),
+      ]);
+      expect(xlsx.suggestedFilename()).toBe(`${base}.xlsx`);
+      expect([...readFileSync(await xlsx.path()).subarray(0, 4)]).toEqual([0x50, 0x4b, 0x03, 0x04]);
+
+      // The page's strict content security policy did not stand in the way, and nothing was
+      // asked of Jira or of anybody else for the files (003 FR-012, SC-009).
+      await expect(page.locator('.wt-export__message')).toBeHidden();
+      expect(requests).toHaveLength(before.requests);
+      expect(urls.filter((url) => !url.startsWith('blob:'))).toHaveLength(before.urls);
+
+      const manifest = JSON.parse(readFileSync(resolve(EXTENSION, 'manifest.json'), 'utf8')) as Record<string, unknown>;
+      expect([manifest.permissions, manifest.host_permissions, manifest.optional_permissions]).toEqual([
+        undefined,
+        undefined,
+        undefined,
+      ]);
+    } finally {
+      await context.close();
+    }
+  });
+
   test('does not run on Confluence pages of the same site', async () => {
     const { context, requests } = await jiraWithExtension(true);
     try {

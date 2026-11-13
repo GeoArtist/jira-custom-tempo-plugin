@@ -4,6 +4,8 @@
 //
 //   vp build                 dist/extension   content.js + manifest.json + icons (to install)
 //                                             + BrowserInstallation.md (the guide for users)
+//   vp build --mode core     dist-core        the same script without the export code; never
+//                                             shipped, only measured (scripts/check-size.ts)
 //   vp build --mode demo     dist-e2e         a fake Jira page with the add-on (browser tests)
 //   vp dev --mode demo       the same fake Jira page, live, at http://127.0.0.1:5173/
 import { readFileSync } from 'node:fs';
@@ -26,22 +28,27 @@ function copyGuide(): Plugin {
 export default defineConfig(({ mode }) => {
   // "demo" replaces the Jira session with a fake one, so the add-on runs without Jira.
   const demo = mode === 'demo';
+  // "core" leaves the export code out, so the size budget can be checked on the rest
+  // (constitution, Principle I): the one door to that code is replaced by a stub.
+  const core = mode === 'core';
 
   return {
     root: demo ? resolve('demo') : process.cwd(),
     base: './',
     // Copied as-is into the extension: manifest.json and the icons.
-    publicDir: demo ? false : resolve('extension'),
-    plugins: demo ? [] : [copyGuide()],
+    publicDir: demo || core ? false : resolve('extension'),
+    plugins: demo || core ? [] : [copyGuide()],
     resolve: {
       alias: demo
         ? [{ find: /^.*\/jira\/session-gateway$/, replacement: resolve('tests/e2e/browser-gateway.ts') }]
-        : [],
+        : core
+          ? [{ find: /^.*\/export\/index$/, replacement: resolve('scripts/export-stub.ts') }]
+          : [],
     },
     build: demo
       ? { outDir: resolve('dist-e2e'), emptyOutDir: true, target: 'es2022' }
       : {
-          outDir: resolve('dist/extension'),
+          outDir: resolve(core ? 'dist-core/extension' : 'dist/extension'),
           emptyOutDir: true,
           target: 'es2022',
           // A content script is one classic script file: no modules, no separate stylesheet
@@ -62,13 +69,13 @@ export default defineConfig(({ mode }) => {
     fmt: {
       singleQuote: true,
       printWidth: 120,
-      ignorePatterns: ['specs/**', '.specify/**', '.claude/**', '**/*.md', 'tests/fixtures/**'],
+      ignorePatterns: ['specs/**', '.specify/**', '.claude/**', '**/*.md', 'tests/fixtures/**', 'dist-core/**'],
     },
     lint: {
       jsPlugins: [{ name: 'vite-plus', specifier: 'vite-plus/oxlint-plugin' }],
       rules: { 'vite-plus/prefer-vite-plus-imports': 'error' },
       options: { typeAware: true, typeCheck: true },
-      ignorePatterns: ['dist/**', 'dist-e2e/**', 'specs/**', '.specify/**', '.claude/**'],
+      ignorePatterns: ['dist/**', 'dist-e2e/**', 'dist-core/**', 'specs/**', '.specify/**', '.claude/**'],
     },
   };
 });

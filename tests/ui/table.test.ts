@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 import { presetPeriod } from '../../src/domain/period';
 import { summarise } from '../../src/domain/summary';
 import { buildRows } from '../../src/domain/worklog';
-import { createTable, sortRows } from '../../src/ui/table';
+import { createTable, sortRows, type ShownView, type TableOptions } from '../../src/ui/table';
 import { fakeSession, FIXTURE_NOW } from '../fake-gateway';
 import search from '../fixtures/search-today.json';
 import worklogs10001 from '../fixtures/worklogs-10001.json';
@@ -15,9 +15,18 @@ const today = presetPeriod('today', TZ, FIXTURE_NOW);
 const week = presetPeriod('thisWeek', TZ, FIXTURE_NOW);
 const todayRows = buildRows(search.issues, worklogs, fakeSession, today);
 
-function build() {
-  const table = createTable();
+function build(options: TableOptions = {}) {
+  const table = createTable(options);
   return { table, root: table.element };
+}
+
+/** The parts of the export control in the total row. */
+function exportParts(root: HTMLElement) {
+  const button = root.querySelector<HTMLButtonElement>('.wt-export__button') as HTMLButtonElement;
+  const menu = root.querySelector<HTMLElement>('.wt-export__menu') as HTMLElement;
+  const [csv, xlsx] = [...menu.querySelectorAll<HTMLButtonElement>('button')] as [HTMLButtonElement, HTMLButtonElement];
+  const message = root.querySelector<HTMLElement>('.wt-export__message') as HTMLElement;
+  return { button, menu, csv, xlsx, message };
 }
 
 const cells = (row: Element) => [...row.querySelectorAll('td')].map((cell) => cell.textContent);
@@ -74,7 +83,8 @@ describe('table', () => {
   it('shows the total under the table, equal to the sum of the rows, in the bar colour', () => {
     const { table, root } = build();
     table.render(todayRows, today, TZ, summarise(todayRows, today));
-    expect(root.querySelector('.wt-footer')?.textContent).toBe('Suma czasu:10h 10m');
+    expect(root.querySelector('.wt-footer__label')?.textContent).toBe('Suma czasu:');
+    expect(root.querySelector('.wt-footer__value')?.textContent).toBe('10h 10m');
     const total = root.querySelector<HTMLElement>('.wt-footer__value') as HTMLElement;
     expect(total.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-yellow)');
     // The label has the colour of the value.
@@ -177,5 +187,146 @@ describe('table', () => {
 
     table.showError(onRetry, false);
     expect(root.querySelectorAll('tbody tr')).toHaveLength(0);
+  });
+});
+
+describe('export control in the total row', () => {
+  const summary = summarise(todayRows, today);
+  const sumHeader = (root: HTMLElement) =>
+    [...root.querySelectorAll<HTMLButtonElement>('th button')].at(-1) as HTMLButtonElement;
+  const exported = (onExport: ReturnType<typeof vi.fn>, call: number) =>
+    onExport.mock.calls[call] as unknown as [string, ShownView];
+
+  it('stands in the total row before the total, in every state', () => {
+    const { table, root } = build();
+    const footer = root.querySelector('.wt-footer') as HTMLElement;
+    const place = () => [...footer.children].map((child) => child.className.split(' ')[0]);
+    expect(place()).toEqual(['wt-export', 'wt-footer__label', 'wt-footer__value']);
+    table.render(todayRows, today, TZ, summary);
+    table.showLoading();
+    table.clear();
+    expect(place()).toEqual(['wt-export', 'wt-footer__label', 'wt-footer__value']);
+  });
+
+  it('is there only while the table shows rows', () => {
+    const { table, root } = build();
+    const { button } = exportParts(root);
+    // Before the first load.
+    expect(button.hidden).toBe(true);
+    table.showLoading();
+    expect(button.hidden).toBe(true);
+
+    table.render(todayRows, today, TZ, summary);
+    expect([button.hidden, button.disabled]).toEqual([false, false]);
+
+    // An empty period.
+    table.render([], today, TZ, summarise([], today));
+    expect(button.hidden).toBe(true);
+  });
+
+  it('hands out the rows in the order on screen, with their period and total', () => {
+    const onExport = vi.fn();
+    const { table, root } = build({ onExport });
+    const { button, csv, xlsx } = exportParts(root);
+    table.render(todayRows, today, TZ, summary);
+
+    button.click();
+    csv.click();
+    expect(onExport).toHaveBeenCalledOnce();
+    const [format, view] = exported(onExport, 0);
+    expect(format).toBe('csv');
+    expect(view.rows.map((row) => row.ticket.key)).toEqual(['AM-10234', 'AM-20012', 'AM-10087']);
+    expect([view.period, view.timeZone, view.summary]).toEqual([today, TZ, summary]);
+
+    // Sorted by "Suma", ascending and then descending: the file follows the screen.
+    sumHeader(root).click();
+    button.click();
+    xlsx.click();
+    const [nextFormat, ascending] = exported(onExport, 1);
+    expect(nextFormat).toBe('xlsx');
+    expect(ascending.rows.map((row) => row.ticket.key)).toEqual(['AM-10087', 'AM-20012', 'AM-10234']);
+
+    sumHeader(root).click();
+    button.click();
+    csv.click();
+    expect(exported(onExport, 2)[1].rows.map((row) => row.totalSeconds)).toEqual([24900, 6300, 5400]);
+  });
+
+  it('cannot be used while a load covers the rows, and its menu closes', () => {
+    const { table, root } = build();
+    const { button, menu } = exportParts(root);
+    table.render(todayRows, today, TZ, summary);
+    button.click();
+    expect(menu.hidden).toBe(false);
+
+    table.showLoading();
+    expect([button.hidden, button.disabled, menu.hidden]).toEqual([false, true, true]);
+
+    table.render(todayRows, today, TZ, summary);
+    expect([button.hidden, button.disabled]).toEqual([false, false]);
+  });
+
+  it('goes when the table is emptied or a load fails without rows', () => {
+    const { table, root } = build();
+    const { button } = exportParts(root);
+    table.render(todayRows, today, TZ, summary);
+    table.clear();
+    expect(button.hidden).toBe(true);
+
+    table.render(todayRows, today, TZ, summary);
+    table.showLoading();
+    table.showError(() => {}, false);
+    expect(button.hidden).toBe(true);
+  });
+
+  it('exports the rows that stay on screen after a failed refresh', () => {
+    const onExport = vi.fn();
+    const { table, root } = build({ onExport });
+    const { button, csv } = exportParts(root);
+    table.render(todayRows, today, TZ, summary);
+    table.showLoading();
+    table.showError(() => {}, true);
+    expect([button.hidden, button.disabled]).toEqual([false, false]);
+    button.click();
+    csv.click();
+    expect(exported(onExport, 0)[1].rows).toHaveLength(3);
+  });
+
+  it('leaves an open menu and a shown message alone when the order changes', () => {
+    const onExport = vi.fn(() => {
+      throw new Error('no file');
+    });
+    const { table, root } = build({ onExport });
+    const { button, menu, csv, message } = exportParts(root);
+    table.render(todayRows, today, TZ, summary);
+    button.click();
+    csv.click();
+    expect(message.textContent).toBe('Nie udało się utworzyć pliku.');
+    sumHeader(root).click();
+    expect(message.textContent).toBe('Nie udało się utworzyć pliku.');
+
+    button.click();
+    sumHeader(root).click();
+    expect(menu.hidden).toBe(false);
+  });
+
+  it('closes its menu when asked, and says when it lost the focus with its use', () => {
+    const onFocusLost = vi.fn();
+    const { table, root } = build({ onFocusLost });
+    document.body.appendChild(root);
+    const { button, menu } = exportParts(root);
+    table.render(todayRows, today, TZ, summary);
+    button.click();
+    table.closeMenu();
+    expect(menu.hidden).toBe(true);
+
+    button.focus();
+    table.showLoading();
+    expect(onFocusLost).toHaveBeenCalledOnce();
+    table.render(todayRows, today, TZ, summary);
+    button.focus();
+    table.clear();
+    expect(onFocusLost).toHaveBeenCalledTimes(2);
+    root.remove();
   });
 });

@@ -24,8 +24,16 @@ export interface Header {
   update(period: Period, summary: PeriodSummary | null): void;
   /** Whose time the panel shows. An empty name leaves the line in place (002 FR-010). */
   setPerson(name: string): void;
-  /** Disables the refresh button and shows the loading indication while a load runs. */
+  /**
+   * Switches the refresh button off and shows the loading indication while a load runs. The
+   * button keeps the keyboard focus meanwhile (003 FR-030).
+   */
   setBusy(busy: boolean): void;
+  /**
+   * Takes the keyboard focus from a control that lost its use: the back button, or the
+   * refresh button when there is nothing to go back to (003 FR-030).
+   */
+  focusFallback(): void;
   /** Which of the back and forward buttons have somewhere to go (FR-082). */
   setHistory(canGoBack: boolean, canGoForward: boolean): void;
   /** Moves the keyboard focus into the panel when it opens. */
@@ -62,9 +70,19 @@ export function createHeader(options: HeaderOptions): Header {
   const backButton = historyButton('undo', pl.back, () => options.onBack());
   const forwardButton = historyButton('redo', pl.forward, () => options.onForward());
 
+  /** A load runs: refresh does nothing, but it is not `disabled`, so it can hold the focus. */
+  let busy = false;
   const refreshButton = el(
     'button',
-    { class: 'wt-button', attrs: { type: 'button' }, on: { click: () => options.onRefresh() } },
+    {
+      class: 'wt-button',
+      attrs: { type: 'button' },
+      on: {
+        click: () => {
+          if (!busy) options.onRefresh();
+        },
+      },
+    },
     [icon('refresh'), el('span', { text: pl.refresh })],
   );
   const settingsButton = el(
@@ -134,10 +152,16 @@ export function createHeader(options: HeaderOptions): Header {
       forwardButton.disabled = !canGoForward;
       if (focused?.disabled) (focused === backButton ? forwardButton : backButton).focus();
     },
-    setBusy(busy) {
-      refreshButton.disabled = busy;
-      refreshButton.classList.toggle('wt-button--busy', busy);
-      refreshButton.setAttribute('aria-busy', String(busy));
+    setBusy(value) {
+      busy = value;
+      // `aria-disabled`, not `disabled`: a disabled button would drop the focus to the page.
+      if (value) refreshButton.setAttribute('aria-disabled', 'true');
+      else refreshButton.removeAttribute('aria-disabled');
+      refreshButton.classList.toggle('wt-button--busy', value);
+      refreshButton.setAttribute('aria-busy', String(value));
+    },
+    focusFallback() {
+      (backButton.disabled ? refreshButton : backButton).focus();
     },
   };
 }

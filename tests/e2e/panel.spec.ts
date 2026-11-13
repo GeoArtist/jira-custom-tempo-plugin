@@ -93,7 +93,7 @@ test.describe('opening and closing', () => {
 
   test('the panel always opens on today', async ({ page }) => {
     await openPanel(page);
-    await page.getByRole('button', { name: 'Wczoraj', exact: true }).click();
+    await page.getByRole('button', { name: 'Poprzedni okres' }).click();
     await expect(page.locator('.wt-title__text')).toHaveText('Czwartek 05-11-2026');
     await page.getByRole('button', { name: 'Zamknij' }).click();
     await launcher(page).click();

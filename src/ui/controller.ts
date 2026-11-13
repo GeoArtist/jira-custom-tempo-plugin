@@ -109,8 +109,13 @@ export class Controller {
     return this.go(1);
   }
 
+  /**
+   * The current day, week, month, or year. Chosen while it is already on screen it is
+   * loaded again; otherwise it is taken from the last load when it lies inside it (FR-085).
+   */
   selectPreset(preset: PresetName): Promise<void> {
-    return this.showPeriod(presetPeriod(preset, this.options.session.timeZone, this.now()));
+    const period = presetPeriod(preset, this.options.session.timeZone, this.now());
+    return samePeriod(period, this.period) ? this.showPeriod(period) : this.selectPart(period);
   }
 
   shiftPeriod(direction: -1 | 1): Promise<void> {
@@ -123,7 +128,7 @@ export class Controller {
   }
 
   /**
-   * A bar of the chart was chosen: its part of the period. It lies inside the period that
+   * A bar of the chart was chosen (or a preset): its part of the period. It lies inside the period that
    * was loaded last, so its rows are picked from that load and Jira is not asked (FR-080,
    * FR-081). Without such a load the period is loaded like any other.
    */

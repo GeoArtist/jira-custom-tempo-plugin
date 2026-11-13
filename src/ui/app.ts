@@ -83,6 +83,7 @@ export async function mountApp(
     onForward: () => void controller().forward(),
     onRefresh: () => void controller().refresh(),
     onSettings: () => popover.toggle(),
+    onMinimise: () => minimise(),
     onClose: () => close(),
   });
   const popover = createSettingsPopover({

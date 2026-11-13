@@ -282,10 +282,13 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
 
 // ---------------------------------------------------------------- period
 
-// One framed box for everything that selects the period (FR-055).
+// One framed box for everything that selects the period (FR-055): the three rows in the
+// middle, and right beside them a step to the previous period and one to the next. The
+// group is as wide as its widest row and stands in the middle of the frame.
 .wt-period {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto minmax(0, auto) auto;
+  justify-content: center;
   gap: var(--wt-space-2);
   margin: var(--wt-space-2) var(--wt-space-5) 0;
   padding: var(--wt-space-2);
@@ -293,11 +296,56 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   border-radius: var(--wt-radius-md);
 
   @media (max-width: $narrow) {
+    // No room for a column at each side: the two steps share a line above the rows.
+    grid-template-columns: 1fr 1fr;
+    justify-content: stretch;
     margin: var(--wt-space-2) var(--wt-space-3) 0;
   }
 }
 
-// Every row is centred and packed: the arrows stand right next to the days (FR-055).
+.wt-period__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wt-space-2);
+  min-width: 0;
+
+  @media (max-width: $narrow) {
+    grid-area: 2 / 1 / 3 / 3;
+  }
+}
+
+// A round button in the middle of a column that runs along all three rows (FR-084).
+.wt-period__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  justify-self: center;
+  width: var(--wt-control);
+  height: var(--wt-control);
+  padding: 0;
+  border: var(--wt-line) solid var(--wt-border);
+  border-radius: var(--wt-radius-pill);
+  background: var(--wt-surface-raised);
+  color: var(--wt-text);
+  cursor: pointer;
+
+  @include base.touch-size {
+    width: var(--wt-touch);
+    height: var(--wt-touch);
+  }
+
+  @include base.hover {
+    border-color: var(--wt-accent);
+    background: var(--wt-hover);
+  }
+
+  @media (max-width: $narrow) {
+    grid-row: 1;
+  }
+}
+
+// Every row is centred and packed (FR-055).
 .wt-period__row {
   display: flex;
   flex-wrap: wrap;
@@ -326,15 +374,6 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   @include base.touch-size {
     min-height: var(--wt-touch);
     min-width: var(--wt-touch);
-  }
-
-  &--arrow {
-    padding: 0;
-
-    // When the row wraps onto several lines, keep both arrows together at the start.
-    @media (max-width: $narrow) {
-      order: -1;
-    }
   }
 
   @include base.hover {

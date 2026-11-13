@@ -8,7 +8,7 @@ const columns = '.wt-chart__col';
 test('a week shows one bar per day in place of the progress bar', async ({ page }) => {
   await openPanel(page);
   const day = await panel(page).boundingBox();
-  await chip(page, 'Ten tydzień').click();
+  await chip(page, 'Tydzień').click();
   await expect(page.locator('.wt-title')).toHaveText('02-11-2026 – 08-11-2026 · 22h 40m');
 
   await expect(page.locator('.wt-chart')).toBeVisible();
@@ -53,7 +53,7 @@ test('a bar has the colour of the progress bar for its value, and stands out und
 }, testInfo) => {
   test.skip(testInfo.project.name === 'phone', 'a phone has no pointer to hover with');
   await openPanel(page);
-  await chip(page, 'Ten tydzień').click();
+  await chip(page, 'Tydzień').click();
   await expect(page.locator(bars)).toHaveCount(7);
   await page.mouse.move(0, 0);
 
@@ -93,7 +93,7 @@ test('a bar has the colour of the progress bar for its value, and stands out und
 
 test('a year shows months, and zooming in shows its days', async ({ page }, testInfo) => {
   await openPanel(page);
-  await chip(page, 'Ten rok').click();
+  await chip(page, 'Rok').click();
   await expect(page.locator(bars)).toHaveCount(12);
   await expect(page.locator('.wt-chart')).toHaveAttribute('data-granularity', 'month');
   await expect(page.locator('.wt-chart__label').first()).toHaveText('01-2026');
@@ -149,7 +149,7 @@ test('a year shows months, and zooming in shows its days', async ({ page }, test
 
 test('a period inside one month has no zoom, and one across two months has', async ({ page }) => {
   await openPanel(page);
-  await chip(page, 'Ten tydzień').click();
+  await chip(page, 'Tydzień').click();
   await expect(page.locator(bars)).toHaveCount(7);
   await expect(page.locator('.wt-chart__tools')).toBeHidden();
 
@@ -169,7 +169,7 @@ test('a period inside one month has no zoom, and one across two months has', asy
 
 test('a click on a bar shows only its month, then only its day, without asking Jira again', async ({ page }) => {
   await openPanel(page);
-  await chip(page, 'Ten rok').click();
+  await chip(page, 'Rok').click();
   await expect(page.locator(bars)).toHaveCount(12);
   const requests: string[] = [];
   page.on('request', (request) => requests.push(request.url()));
@@ -183,7 +183,7 @@ test('a click on a bar shows only its month, then only its day, without asking J
   await expect(page.locator('#wt-from')).toHaveValue('2026-11-01T00:00');
   await expect(page.locator('#wt-to')).toHaveValue('2026-11-30T23:59');
   await expect(page.locator('.wt-title')).toContainText('01-11-2026 – 30-11-2026');
-  await expect(chip(page, 'Ten miesiąc')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chip(page, 'Miesiąc')).toHaveAttribute('aria-pressed', 'true');
   const seconds = await page
     .locator(columns)
     .evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute('data-seconds'))));
@@ -205,7 +205,7 @@ test('a click on a bar shows only its month, then only its day, without asking J
   await expect(page.locator(bars)).toHaveCount(30);
   await back.click();
   await expect(page.locator(bars)).toHaveCount(12);
-  await expect(chip(page, 'Ten rok')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chip(page, 'Rok')).toHaveAttribute('aria-pressed', 'true');
   await back.click();
   await expect(page.locator('.wt-title')).toHaveText('Piątek 06-11-2026 · 10h 10m');
   await expect(back).toBeDisabled();
@@ -220,7 +220,7 @@ test('a click on a bar shows only its month, then only its day, without asking J
 
 test('the chart is readable in both themes', async ({ page }) => {
   await openPanel(page);
-  await chip(page, 'Ten tydzień').click();
+  await chip(page, 'Tydzień').click();
   await expect(page.locator(bars)).toHaveCount(7);
   for (const mode of ['dark', 'light'] as const) {
     await page.locator('.wt-root').evaluate((node, value) => node.setAttribute('data-theme', value), mode);

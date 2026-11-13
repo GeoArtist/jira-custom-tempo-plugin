@@ -1,5 +1,5 @@
 // Title line with the total, and the action buttons: back, forward, refresh, settings,
-// close (FR-012, FR-013, FR-029, FR-031, FR-041, FR-082).
+// minimise, close (FR-012, FR-013, FR-029, FR-031, FR-041, FR-082, FR-086).
 import { formatDuration, formatTitle } from '../domain/format';
 import type { Period } from '../domain/period';
 import type { PeriodSummary } from '../domain/summary';
@@ -11,6 +11,8 @@ export interface HeaderOptions {
   onForward(): void;
   onRefresh(): void;
   onSettings(): void;
+  /** Hide the panel and keep everything as it is, like a click on the launcher (FR-086). */
+  onMinimise(): void;
   onClose(): void;
 }
 
@@ -69,6 +71,16 @@ export function createHeader(options: HeaderOptions): Header {
     },
     [icon('gear')],
   );
+  const minimiseButton = el(
+    'button',
+    {
+      class: 'wt-button wt-button--icon',
+      attrs: { type: 'button', 'aria-label': pl.minimise },
+      on: { click: () => options.onMinimise() },
+    },
+    [icon('minimise')],
+  );
+  minimiseButton.title = pl.minimise;
   const closeButton = el(
     'button',
     {
@@ -81,7 +93,14 @@ export function createHeader(options: HeaderOptions): Header {
 
   const element = el('header', { class: 'wt-header' }, [
     el('div', { class: 'wt-header__text' }, [title]),
-    el('div', { class: 'wt-header__actions' }, [backButton, forwardButton, refreshButton, settingsButton, closeButton]),
+    el('div', { class: 'wt-header__actions' }, [
+      backButton,
+      forwardButton,
+      refreshButton,
+      settingsButton,
+      minimiseButton,
+      closeButton,
+    ]),
   ]);
 
   return {

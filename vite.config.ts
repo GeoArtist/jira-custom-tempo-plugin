@@ -3,10 +3,25 @@
 // The product is a browser extension: one content script that runs on Jira Cloud pages.
 //
 //   vp build                 dist/extension   content.js + manifest.json + icons (to install)
+//                                             + BrowserInstallation.md (the guide for users)
 //   vp build --mode demo     dist-e2e         a fake Jira page with the add-on (browser tests)
 //   vp dev --mode demo       the same fake Jira page, live, at http://127.0.0.1:5173/
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { defineConfig } from 'vite-plus';
+import { defineConfig, type Plugin } from 'vite-plus';
+
+/** The installation guide travels with the extension: every build puts it into dist/extension. */
+const GUIDE = 'BrowserInstallation.md';
+
+function copyGuide(): Plugin {
+  return {
+    name: 'copy-installation-guide',
+    generateBundle() {
+      // A missing guide fails the build: the folder must never go out without it.
+      this.emitFile({ type: 'asset', fileName: GUIDE, source: readFileSync(resolve(GUIDE)) });
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
   // "demo" replaces the Jira session with a fake one, so the add-on runs without Jira.
@@ -17,6 +32,7 @@ export default defineConfig(({ mode }) => {
     base: './',
     // Copied as-is into the extension: manifest.json and the icons.
     publicDir: demo ? false : resolve('extension'),
+    plugins: demo ? [] : [copyGuide()],
     resolve: {
       alias: demo
         ? [{ find: /^.*\/jira\/session-gateway$/, replacement: resolve('tests/e2e/browser-gateway.ts') }]

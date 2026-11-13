@@ -6,15 +6,16 @@ export const pl = {
   forward: 'Ponów',
   refresh: 'Odśwież',
   settings: 'Ustawienia',
+  minimise: 'Minimalizuj',
   close: 'Zamknij',
   previousPeriod: 'Poprzedni okres',
   nextPeriod: 'Następny okres',
 
   presets: {
-    yesterday: 'Wczoraj',
-    thisWeek: 'Ten tydzień',
-    thisMonth: 'Ten miesiąc',
-    thisYear: 'Ten rok',
+    today: 'Dzień',
+    thisWeek: 'Tydzień',
+    thisMonth: 'Miesiąc',
+    thisYear: 'Rok',
   },
 
   day: 'Dzień:',

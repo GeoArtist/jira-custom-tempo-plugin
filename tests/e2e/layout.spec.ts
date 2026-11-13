@@ -90,19 +90,36 @@ test('the launcher changes colour under the pointer', async ({ page }) => {
 
 test('minimising keeps the period; the close button starts again on today', async ({ page }) => {
   await openPanel(page);
-  await chip(page, 'Wczoraj').click();
+  await page.getByRole('button', { name: 'Poprzedni okres' }).click();
   await expect(page.locator('.wt-title')).toHaveText('Czwartek 05-11-2026 · 0h 30m');
 
   await launcher(page).click();
   await expect(panel(page)).toBeHidden();
   await launcher(page).click();
   await expect(page.locator('.wt-title')).toHaveText('Czwartek 05-11-2026 · 0h 30m');
-  await expect(chip(page, 'Wczoraj')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chip(page, 'Dzień')).toHaveAttribute('aria-pressed', 'true');
 
   await page.keyboard.press('Escape');
   await expect(panel(page)).toBeHidden();
   await launcher(page).click();
-  await expect(chip(page, 'Wczoraj')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chip(page, 'Dzień')).toHaveAttribute('aria-pressed', 'true');
+
+  // The minimise button of the header, between settings and close, does the same.
+  const minimise = page.getByRole('button', { name: 'Minimalizuj' });
+  const [gear, own, cross] = await Promise.all(
+    [page.getByRole('button', { name: 'Ustawienia' }), minimise, page.getByRole('button', { name: 'Zamknij' })].map(
+      (button) => button.boundingBox(),
+    ),
+  );
+  if (!gear || !own || !cross) throw new Error('not rendered');
+  expect(own.x).toBeGreaterThan(gear.x);
+  expect(own.x).toBeLessThan(cross.x);
+  await minimise.click();
+  await expect(panel(page)).toBeHidden();
+  await expect(launcher(page)).toBeFocused();
+  await expect(launcher(page)).toHaveText('05-11-2026: 0h 30m');
+  await launcher(page).click();
+  await expect(page.locator('.wt-title')).toHaveText('Czwartek 05-11-2026 · 0h 30m');
 
   await page.getByRole('button', { name: 'Zamknij' }).click();
   await launcher(page).click();
@@ -180,7 +197,7 @@ test('settings: the explanation of the interval is a tooltip of its row', async 
   expect(second.y - (first.y + first.height)).toBeLessThan(16);
 });
 
-test('the three rows of the period box are centred and the arrows stand next to the days', async ({
+test('the three rows of the period box are centred, with a round step right beside them at mid-height', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name === 'phone', 'the rows wrap on a phone');
@@ -196,11 +213,35 @@ test('the three rows of the period box are centred and the arrows stand next to 
     expect(Math.abs((first.x + last.x + last.width) / 2 - centre)).toBeLessThan(2);
   }
 
-  // Packed: the next arrow follows the day field after the normal gap.
-  const day = await page.locator('label[for="wt-day"]').boundingBox();
-  const next = await page.getByRole('button', { name: 'Następny okres' }).boundingBox();
-  if (!day || !next) throw new Error('not rendered');
-  expect(next.x - (day.x + day.width)).toBeLessThan(12);
+  // The steps: circles right beside the rows, at the middle of their height.
+  const previous = page.getByRole('button', { name: 'Poprzedni okres' });
+  const next = page.getByRole('button', { name: 'Następny okres' });
+  const [left, right] = [await previous.boundingBox(), await next.boundingBox()];
+  const rows = await page.locator('.wt-period__row').all();
+  const top = await rows[0]?.boundingBox();
+  const bottom = await rows[2]?.boundingBox();
+  if (!left || !right || !top || !bottom) throw new Error('not rendered');
+  const middle = (top.y + bottom.y + bottom.height) / 2;
+  for (const step of [left, right]) {
+    expect(step.width).toBe(step.height);
+    expect(step.width).toBeLessThan(50);
+    expect(Math.abs(step.y + step.height / 2 - middle)).toBeLessThan(1);
+  }
+  const widest = await rows[2]?.locator(':scope > *').evaluateAll((nodes) => {
+    const boxes = nodes.map((node) => node.getBoundingClientRect());
+    return [Math.min(...boxes.map((box) => box.left)), Math.max(...boxes.map((box) => box.right))];
+  });
+  if (!widest) throw new Error('not rendered');
+  // 8 px from the widest row at each side, and well inside the frame.
+  expect(Math.abs((widest[0] ?? 0) - (left.x + left.width) - 8)).toBeLessThan(1.5);
+  expect(Math.abs(right.x - (widest[1] ?? 0) - 8)).toBeLessThan(1.5);
+  expect(left.x - frame.x).toBeGreaterThan(40);
+  expect(Math.abs(left.x - frame.x - (frame.x + frame.width - (right.x + right.width)))).toBeLessThan(2);
+  expect(Number.parseFloat(await next.evaluate((node) => getComputedStyle(node).borderTopLeftRadius))).toBeGreaterThan(
+    22,
+  );
+  await previous.hover();
+  await expect(previous).toHaveCSS('cursor', 'pointer');
 });
 
 test('buttons change colour under the pointer; the selected preset answers the other way round', async ({ page }) => {
@@ -208,7 +249,7 @@ test('buttons change colour under the pointer; the selected preset answers the o
   await expect(footerTotal(page)).toHaveText('10h 10m');
   const settle = () => page.waitForTimeout(250);
 
-  for (const control of [chip(page, 'Wczoraj'), page.getByRole('button', { name: 'Ustawienia' })]) {
+  for (const control of [chip(page, 'Tydzień'), page.getByRole('button', { name: 'Ustawienia' })]) {
     await page.locator('.wt-title').hover();
     const idle = await paintedColour(control, 'backgroundColor');
     await control.hover();
@@ -217,14 +258,14 @@ test('buttons change colour under the pointer; the selected preset answers the o
   }
 
   // Selected: filled when idle, an outline with coloured text under the pointer.
-  const active = chip(page, 'Wczoraj');
-  await active.click();
+  const active = chip(page, 'Dzień');
+  await page.getByRole('button', { name: 'Poprzedni okres' }).click();
   await expect(active).toHaveAttribute('aria-pressed', 'true');
   await expect(footerTotal(page)).toHaveText('0h 30m');
   await page.locator('.wt-title').hover();
   await settle();
   const filled = await paintedColour(active, 'backgroundColor');
-  const plain = await paintedColour(chip(page, 'Ten rok'), 'backgroundColor');
+  const plain = await paintedColour(chip(page, 'Rok'), 'backgroundColor');
   await active.hover();
   await settle();
   const hovered = await paintedColour(active, 'backgroundColor');
@@ -237,7 +278,7 @@ test('the launcher names the period of the panel and mutes a total of zero', asy
   await openPanel(page);
   await expect(launcher(page)).toHaveText('Dziś: 10h 10m');
 
-  await chip(page, 'Wczoraj').click();
+  await page.getByRole('button', { name: 'Poprzedni okres' }).click();
   await expect(launcher(page)).toHaveText('05-11-2026: 0h 30m');
   // A day with logged time: the dot has the colour of the total, as the bar would.
   const dot = launcher(page).locator('.wt-launcher__dot');
@@ -575,7 +616,8 @@ test('the panel stays on the launcher when the window is resized', async ({ page
     await expect
       .poll(async () => {
         const now = await boxes();
-        return now.l.x + now.l.width <= width && now.p.x + now.p.width <= width;
+        // The panel is placed again a moment after the window has changed.
+        return now.l.x + now.l.width <= width && now.p.x >= 0 && now.p.x + now.p.width <= width;
       })
       .toBe(true);
     const { p, l: hook } = await boxes();

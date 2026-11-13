@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vite-plus/test';
-import { presetPeriod } from '../../src/domain/period';
+import { presetPeriod, type Period } from '../../src/domain/period';
 import { createPeriodBar } from '../../src/ui/period-bar';
 import { FIXTURE_NOW } from '../fake-gateway';
 
@@ -25,17 +25,18 @@ function build() {
 }
 
 describe('period bar', () => {
-  it('offers three rows: the day with the arrows, the presets, and the range', () => {
+  it('offers three rows between the two steps: the day, the presets, and the range', () => {
     const { root } = build();
     const texts = (selector: string) => [...root.querySelectorAll(selector)].map((c) => c.textContent);
     const rows = [...root.querySelectorAll('.wt-period__row')];
     expect(rows).toHaveLength(3);
-    expect(texts('.wt-period__days .wt-chip:not(.wt-chip--arrow)')).toEqual([]);
-    expect(texts('.wt-period__presets .wt-chip')).toEqual(['Wczoraj', 'Ten tydzień', 'Ten miesiąc', 'Ten rok']);
-    // The arrows open and close the row of the day.
-    const days = rows[0] as Element;
-    expect(days.firstElementChild?.getAttribute('aria-label')).toBe('Poprzedni okres');
-    expect(days.lastElementChild?.getAttribute('aria-label')).toBe('Następny okres');
+    expect(texts('.wt-period__days .wt-chip')).toEqual([]);
+    expect(texts('.wt-period__presets .wt-chip')).toEqual(['Dzień', 'Tydzień', 'Miesiąc', 'Rok']);
+    // The steps open and close the whole box, around the three rows.
+    expect(root.firstElementChild?.getAttribute('aria-label')).toBe('Poprzedni okres');
+    expect(root.lastElementChild?.getAttribute('aria-label')).toBe('Następny okres');
+    expect(root.children).toHaveLength(3);
+    expect(root.children[1]?.contains(rows[2] as Element)).toBe(true);
     expect(root.querySelector('label[for="wt-day"]')?.textContent).toBe('Dzień:');
     expect(root.querySelector<HTMLInputElement>('#wt-day')?.type).toBe('date');
     expect(root.querySelector('[aria-label="Poprzedni okres"]')).not.toBeNull();
@@ -47,32 +48,52 @@ describe('period bar', () => {
   it('marks the active preset and fills "Od" 00:00 and "Do" 23:59', () => {
     const { bar, root, chip, from, to, day } = build();
     bar.update(today);
-    // Today has no button: the day field names it.
-    expect(root.querySelectorAll('[aria-pressed="true"]')).toHaveLength(0);
+    expect(root.querySelectorAll('[aria-pressed="true"]')).toHaveLength(1);
     expect(day.value).toBe('2026-11-06');
-    expect(chip('Wczoraj')?.getAttribute('aria-pressed')).toBe('false');
+    expect(chip('Dzień')?.getAttribute('aria-pressed')).toBe('true');
     expect(from.value).toBe('2026-11-06T00:00');
     expect(to.value).toBe('2026-11-06T23:59');
 
     bar.update(week);
     expect(day.value).toBe('');
-    expect(chip('Ten tydzień')?.getAttribute('aria-pressed')).toBe('true');
+    expect(chip('Tydzień')?.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelectorAll('[aria-pressed="true"]')).toHaveLength(1);
     expect(from.value).toBe('2026-11-02T00:00');
     expect(to.value).toBe('2026-11-08T23:59');
   });
 
-  it('highlights no preset for a custom range', () => {
-    const { bar, root } = build();
-    bar.update({ ...today, preset: 'custom' });
-    expect(root.querySelectorAll('[aria-pressed="true"]')).toHaveLength(0);
+  it('keeps the kind of period selected on any day, week, month, or year, like radio buttons', () => {
+    const { bar, root, chip } = build();
+    const pressed = () => [...root.querySelectorAll('[aria-pressed="true"]')].map((button) => button.textContent);
+    const whole = (from: [number, number, number], to: [number, number, number]): Period => ({
+      from: { date: { year: from[0], month: from[1], day: from[2] }, minuteOfDay: 0 },
+      to: { date: { year: to[0], month: to[1], day: to[2] }, minuteOfDay: 1439 },
+      preset: 'custom',
+    });
+    bar.update(whole([2025, 3, 14], [2025, 3, 14]));
+    expect(pressed()).toEqual(['Dzień']);
+    bar.update(whole([2026, 10, 19], [2026, 10, 25]));
+    expect(pressed()).toEqual(['Tydzień']);
+    bar.update(whole([2026, 2, 1], [2026, 2, 28]));
+    expect(pressed()).toEqual(['Miesiąc']);
+    bar.update(whole([2024, 1, 1], [2024, 12, 31]));
+    expect(pressed()).toEqual(['Rok']);
+    expect(chip('Dzień')?.classList.contains('wt-chip--active')).toBe(false);
+
+    // Anything else is no kind: seven days from a Tuesday, or a day cut by a time.
+    bar.update(whole([2026, 11, 3], [2026, 11, 9]));
+    expect(pressed()).toEqual([]);
+    const cut = whole([2026, 11, 6], [2026, 11, 6]);
+    bar.update({ ...cut, from: { ...cut.from, minuteOfDay: 600 } });
+    expect(pressed()).toEqual([]);
   });
 
   it('reports a preset click and arrow clicks', () => {
     const { root, chip, handlers } = build();
-    chip('Wczoraj')?.click();
+    chip('Dzień')?.click();
     root.querySelector<HTMLButtonElement>('[aria-label="Poprzedni okres"]')?.click();
     root.querySelector<HTMLButtonElement>('[aria-label="Następny okres"]')?.click();
-    expect(handlers.onPreset).toHaveBeenCalledWith('yesterday');
+    expect(handlers.onPreset).toHaveBeenCalledWith('today');
     expect(handlers.onShift.mock.calls).toEqual([[-1], [1]]);
   });
 

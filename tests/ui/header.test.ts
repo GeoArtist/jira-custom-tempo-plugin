@@ -17,7 +17,14 @@ const rows = (seconds: number): TicketRow[] => [
 ];
 
 function build() {
-  const handlers = { onBack: vi.fn(), onForward: vi.fn(), onRefresh: vi.fn(), onSettings: vi.fn(), onClose: vi.fn() };
+  const handlers = {
+    onBack: vi.fn(),
+    onForward: vi.fn(),
+    onRefresh: vi.fn(),
+    onSettings: vi.fn(),
+    onMinimise: vi.fn(),
+    onClose: vi.fn(),
+  };
   const header = createHeader(handlers);
   return { header, handlers };
 }
@@ -25,6 +32,19 @@ function build() {
 const byLabel = (root: HTMLElement, label: string) => root.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`);
 
 describe('header', () => {
+  it('has a minimise button between settings and close', () => {
+    const { header, handlers } = build();
+    const labels = [...header.element.querySelectorAll('.wt-header__actions button')].map(
+      (button) => button.getAttribute('aria-label') ?? button.textContent,
+    );
+    expect(labels.slice(-3)).toEqual(['Ustawienia', 'Minimalizuj', 'Zamknij']);
+    const minimise = byLabel(header.element, 'Minimalizuj') as HTMLButtonElement;
+    expect(minimise.title).toBe('Minimalizuj');
+    minimise.click();
+    expect(handlers.onMinimise).toHaveBeenCalledTimes(1);
+    expect(handlers.onClose).not.toHaveBeenCalled();
+  });
+
   it('has back and forward before refresh, switched off until there is somewhere to go', () => {
     const { header, handlers } = build();
     const labels = [...header.element.querySelectorAll('.wt-header__actions button')].map(

@@ -324,6 +324,22 @@ describe('opening the panel', () => {
     expect(controller.period.preset).toBe('thisWeek');
   });
 
+  it('minimises with the header button like with the launcher: the period and the steps stay', async () => {
+    const { app, controller, root } = await mountOpen(new FakeGateway(todayRoutes()));
+    await controller.selectPreset('thisWeek');
+    byLabel(root, 'Minimalizuj')?.click();
+    expect(app.isOpen()).toBe(false);
+    expect(panel(root).hidden).toBe(true);
+    expect(launcher(root).getAttribute('aria-expanded')).toBe('false');
+    expect(launcher(root).textContent).toContain('Zakres:');
+
+    launcher(root).click();
+    await flush(80);
+    expect(app.isOpen()).toBe(true);
+    expect(controller.period.preset).toBe('thisWeek');
+    expect(byLabel(root, 'Cofnij')?.disabled).toBe(false);
+  });
+
   it('reloads the kept period when it is shown again', async () => {
     const gateway = new FakeGateway(todayRoutes());
     const { app, controller } = await mountOpen(gateway);
@@ -383,7 +399,7 @@ describe('changing the period', () => {
     await controller.selectPreset('yesterday');
     expect(text(root, '.wt-title')).toBe('Czwartek 05-11-2026 · 1h 30m');
     expect(rowKeys(root)).toEqual(['AM-20012', 'AM-10234']);
-    expect(button(root, 'Wczoraj')?.getAttribute('aria-pressed')).toBe('true');
+    expect(button(root, 'Dzień')?.getAttribute('aria-pressed')).toBe('true');
     // The launcher follows the period of the panel: another day is named by its date.
     expect(launcher(root).textContent).toBe('05-11-2026: 1h 30m');
   });
@@ -458,7 +474,44 @@ describe('changing the period', () => {
     await flush(80);
     expect(controller.period.preset).toBe('custom');
     expect(text(root, '.wt-title__text')).toBe('Wtorek 03-11-2026');
-    expect(root.querySelectorAll('.wt-chip[aria-pressed="true"]')).toHaveLength(0);
+    // The arrows keep the kind of period selected, like a radio button (FR-085).
+    expect([...root.querySelectorAll('.wt-chip[aria-pressed="true"]')].map((chip) => chip.textContent)).toEqual([
+      'Dzień',
+    ]);
+  });
+
+  it('goes to the current day, week, month, or year with the four buttons', async () => {
+    const gateway = new FakeGateway(todayRoutes());
+    const { controller, root } = await mountOpen(gateway);
+    const pressed = () => [...root.querySelectorAll('.wt-chip[aria-pressed="true"]')].map((chip) => chip.textContent);
+    expect(pressed()).toEqual(['Dzień']);
+
+    button(root, 'Tydzień')?.click();
+    await flush(80);
+    expect(pressed()).toEqual(['Tydzień']);
+    byLabel(root, 'Poprzedni okres')?.click();
+    await flush(80);
+    expect(text(root, '.wt-title__text')).toBe('26-10-2026 – 01-11-2026');
+    expect(pressed()).toEqual(['Tydzień']);
+
+    // The button again: the current week, not the one the arrows reached.
+    button(root, 'Tydzień')?.click();
+    await flush(80);
+    expect(controller.period.preset).toBe('thisWeek');
+
+    // The current day lies inside the loaded week: it is shown without asking Jira.
+    const asked = gateway.requests.length;
+    button(root, 'Dzień')?.click();
+    expect(controller.state).toBe('ready');
+    expect(text(root, '.wt-title')).toBe('Piątek 06-11-2026 · 10h 10m');
+    expect(gateway.requests).toHaveLength(asked);
+
+    // Pressed while its period is on screen, a button loads it again.
+    button(root, 'Dzień')?.click();
+    expect(controller.state).toBe('loading');
+    await flush(80);
+    expect(gateway.requests.length).toBeGreaterThan(asked);
+    expect(byLabel(root, 'Cofnij')?.disabled).toBe(false);
   });
 
   it('filters a custom window by start time and keeps the bar active inside one day', async () => {

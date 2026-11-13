@@ -6,7 +6,7 @@ test('a large month is shown completely and stays usable', async ({ page }, test
   await openPanel(page, { scenario: 'month', delay: 5 });
 
   const started = Date.now();
-  await chip(page, 'Ten miesiąc').click();
+  await chip(page, 'Miesiąc').click();
   await expect(rows(page)).toHaveCount(60);
   // SC-003: a preset shows its data within 3 seconds.
   expect(Date.now() - started).toBeLessThan(3000);
@@ -30,7 +30,7 @@ test('a large month is shown completely and stays usable', async ({ page }, test
     await scroll.evaluate((node) => node.scrollTo(0, node.scrollHeight));
     await expect(rows(page).last()).toBeInViewport();
     await expect(page.locator('.wt-title')).toBeInViewport();
-    await expect(chip(page, 'Ten miesiąc')).toBeInViewport();
+    await expect(chip(page, 'Miesiąc')).toBeInViewport();
     await expect(footerTotal(page)).toBeInViewport();
   }
 

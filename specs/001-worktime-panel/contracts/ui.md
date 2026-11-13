@@ -31,12 +31,19 @@ Icon: `extension/icons/icon-16.png`, `icon-32.png`, `icon-48.png`, `icon-128.png
    the left): drag the top edge to set the height (FR-059), the side edge to set the width,
    the corner to set both (FR-071).
 1. Header: title line and the buttons back, forward (curved arrows, FR-082), "Odśwież",
-   settings (gear), close. No subtitle (FR-070). At 600 px and narrower the buttons stand on
+   settings (gear), minimise (a line at the foot of the button, FR-086), close. No subtitle (FR-070). At 600 px and narrower the buttons stand on
    a line of their own under the title, at the right.
-2. Period box, one light frame with three rows, each centred and packed with 8 px gaps
-   (FR-055):
-   1. previous arrow, "Dzień:" with a native date input, next arrow;
-   2. "Wczoraj", "Ten tydzień", "Ten miesiąc", "Ten rok";
+2. Period box, one light frame (FR-055, FR-084). Left of the rows the previous-period button,
+   right of them the next-period button: circles of one control (32 px; 44 px on touch)
+   with a chevron, 8 px from the widest row, each at the middle of the height of the three
+   rows. The rows with the two buttons are centred in the frame; the buttons do not go to
+   its ends. At
+   600 px and narrower the two stand side by side above the rows, each in the middle of its
+   half of the box.
+   Between them three rows, each centred and packed with 8 px gaps:
+   1. "Dzień:" with a native date input;
+   2. "Dzień", "Tydzień", "Miesiąc", "Rok": the current day, week, month, and year. The one
+      for the kind of period on screen is shown selected (FR-085);
    3. "Od:" and "Do:" inputs, each a date and a time (native date-time input).
 3. Progress bar with scale ticks and nothing written under it. It stands midway between the
    period box and the table: 24 px above the bar and 24 px below its scale (FR-020, FR-066).
@@ -87,9 +94,10 @@ in view. Below 600 px the whole panel scrolls.
 | Back and forward buttons (accessible names and tooltips) | `Cofnij`, `Ponów` |
 | Refresh button | `Odśwież` |
 | Settings button (accessible name) | `Ustawienia` |
+| Minimise button (accessible name and tooltip) | `Minimalizuj` |
 | Close button (accessible name) | `Zamknij` |
 | Previous / next period (accessible names) | `Poprzedni okres` / `Następny okres` |
-| Presets | `Wczoraj`, `Ten tydzień`, `Ten miesiąc`, `Ten rok` |
+| Period buttons | `Dzień`, `Tydzień`, `Miesiąc`, `Rok` |
 | Day field label | `Dzień:` |
 | Range labels | `Od:`, `Do:` |
 | Table headers | `Zgłoszenie`, `Tytuł`, `Czas wpisów`, `Suma` |
@@ -292,6 +300,11 @@ Sizes are in px, because `rem` would follow the Jira page's root font size.
   overshoot (none when the user asked for reduced motion). The knob has the same 2 px gap to
   the border at the top, the bottom, and the end it rests at. `aria-checked="true"` means dark
   (FR-044).
+- "Dzień", "Tydzień", "Miesiąc", "Rok" work like radio buttons (FR-085): the selected one
+  (`aria-pressed="true"`, filled) names the kind of period on screen and stays selected
+  while the arrows move through days, weeks, months, or years; none is selected for another
+  range. A press goes to the current day, week, month, or year: without the spinner when
+  the loaded data covers it, with a load otherwise or when it is already on screen.
 - Selecting a preset, picking a day in "Dzień:", editing "Od"/"Do", or pressing an arrow loads
   the new period at once.
 - Changing "Od" moves "Do" to the same day: its time is kept, or becomes 23:59 when it would be
@@ -300,6 +313,8 @@ Sizes are in px, because `rem` would follow the Jira page's root font size.
 - "Dzień:" shows the day when the period is exactly one whole day and is empty otherwise
   (FR-057).
 - "Odśwież" is disabled while a load is running and shows the loading indication.
+- "Minimalizuj" hides the panel like the launcher and Escape do and moves the focus to the
+  launcher; nothing is forgotten (FR-064, FR-086).
 - "Cofnij" and "Ponów" are disabled when there is no view to go to: 40% opacity, default
   cursor, no reaction to the pointer. Enabled, they get the accent border and the hover
   background of the other buttons. When the button under the keyboard focus becomes

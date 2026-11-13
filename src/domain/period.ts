@@ -25,9 +25,19 @@ export type PresetName =
   | 'prevYear';
 export type Preset = PresetName | 'custom';
 
-/** The presets the period box offers as buttons (FR-021). */
-export type PanelPreset = 'yesterday' | 'thisWeek' | 'thisMonth' | 'thisYear';
-export const PANEL_PRESETS: readonly PanelPreset[] = ['yesterday', 'thisWeek', 'thisMonth', 'thisYear'];
+/** What a period is a whole one of, if anything: the arrows move it by one of these. */
+export type PeriodKind = 'day' | 'week' | 'month' | 'year';
+
+/** The buttons of the period box (FR-021): the current day, week, month, and year. */
+export type PanelPreset = 'today' | 'thisWeek' | 'thisMonth' | 'thisYear';
+export const PANEL_PRESETS: readonly PanelPreset[] = ['today', 'thisWeek', 'thisMonth', 'thisYear'];
+/** The kind of period a button stands for; it stays selected on any period of that kind. */
+export const PRESET_KIND: Record<PanelPreset, PeriodKind> = {
+  today: 'day',
+  thisWeek: 'week',
+  thisMonth: 'month',
+  thisYear: 'year',
+};
 /** Every range that has a name; the arrows and the date fields can reach all of them. */
 export const PRESET_NAMES: readonly PresetName[] = [
   'today',
@@ -168,6 +178,15 @@ function isFullYear(period: Period): boolean {
     to.date.month === 12 &&
     to.date.day === 31
   );
+}
+
+/** One whole day, one Monday-to-Sunday week, one calendar month, or one calendar year. */
+export function periodKind(period: Period): PeriodKind | null {
+  if (isWholeDays(period) && isSingleDay(period)) return 'day';
+  if (isFullWeek(period)) return 'week';
+  if (isFullMonth(period)) return 'month';
+  if (isFullYear(period)) return 'year';
+  return null;
 }
 
 /** The preset whose range equals the period right now, otherwise `custom`. */

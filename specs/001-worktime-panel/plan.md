@@ -200,7 +200,7 @@ tests/
                              # and extension.spec.ts with the real built extension
 
 dist/                        # build output, not committed
-├── extension/               # content.js, manifest.json, icons/: load this in the browser
+├── extension/               # content.js, manifest.json, icons/, BrowserInstallation.md: load this in the browser
 └── jira-custom-tempo-<version>.zip
 ```
 

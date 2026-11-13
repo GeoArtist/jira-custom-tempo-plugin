@@ -81,7 +81,7 @@ for (const mode of ['dark', 'light'] as const) {
       }
 
       // The active preset: text against the accent colour.
-      await page.getByRole('button', { name: 'Wczoraj', exact: true }).click();
+      await page.getByRole('button', { name: 'Dzień', exact: true }).click();
       const active = page.locator('.wt-chip--active');
       await expect(active).toHaveCount(1);
       await page.mouse.move(0, 0);

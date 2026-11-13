@@ -13,9 +13,9 @@ ticket, and the total. For a single day the panel also shows a progress bar agai
 - **Launcher**: today's total on every Jira page, coloured like the progress bar. When you
   select another period in the panel it shows that one: a date, or "Zakres:" for a range.
   Drag it anywhere in the window; it remembers its place.
-- **Panel**: any single day ("Dzień:") with arrows to the previous and next period, the
-  presets "Wczoraj", "Ten tydzień", "Ten miesiąc", "Ten rok", and a custom range with date and
-  time. The table sorts by any column. Minimising the panel with the launcher keeps the
+- **Panel**: any single day ("Dzień:"), the buttons "Dzień", "Tydzień", "Miesiąc", "Rok" for
+  the current day, week, month, and year, round arrow buttons at both sides that move to the
+  previous and next one, and a custom range with date and time. The table sorts by any column. Minimising the panel with the launcher or the minimise button keeps the
   selected period; the close button starts again on today. The panel hangs on the launcher:
   above it, or below it when the launcher is near the top. Drag its edges or its corner to set
   its height and width.
@@ -51,7 +51,8 @@ ticket, and the total. For a single day the panel also shows a progress bar agai
 5. Open your Jira Cloud site while signed in. The launcher appears in the bottom-right corner.
 
 For people who only use the extension there is a short Polish guide, per browser, in
-[BrowserInstallation.md](BrowserInstallation.md).
+[BrowserInstallation.md](BrowserInstallation.md). Every build copies it into `dist/extension`,
+so it is also inside the zip file.
 
 After a code change: `vp run build`, press the extension's reload button on the extensions
 page, and reload the Jira page.
@@ -74,10 +75,10 @@ install an extension from a file in any other way.
 | Command | Does |
 |---------|------|
 | `vp install` | Installs the pinned dependencies |
-| `vp run dev` | Serves a stand-in Jira page with the add-on and a faked Jira at `http://127.0.0.1:5173/`. The sample data is dated 2 to 6 November 2026, so click "Ten tydzień" and then the previous arrow. |
+| `vp run dev` | Serves a stand-in Jira page with the add-on and a faked Jira at `http://127.0.0.1:5173/`. The sample data is dated 2 to 6 November 2026, so click "Tydzień" and then the previous arrow. |
 | `vp test run` | Unit and UI tests. No Jira needed. |
 | `vp check` | Format, lint, and type checks (`vp check --fix` repairs formatting) |
-| `vp run build` | Builds `dist/extension` and fails if it is over 100 kB gzipped |
+| `vp run build` | Builds `dist/extension` (with a copy of `BrowserInstallation.md`) and fails if it is over 100 kB gzipped |
 | `vp run test:e2e` | Browser tests: the stand-in page at 320 px, 1280 px, and 1920 px, and the real extension loaded into Chromium |
 | `vp run check` | All of the above: the full gate before a merge |
 | `vp run package` | Builds and packs the zip file |

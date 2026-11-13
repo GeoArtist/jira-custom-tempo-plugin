@@ -244,6 +244,10 @@ Rules:
   and ordered as after a load, and no request is sent. A load on its way is cancelled. Any
   other period, and every refresh, goes through `loading`; a successful load replaces what is
   kept.
+- Period buttons (FR-085): the selected button follows the kind of the period (`day`,
+  `week`, `month`, `year`, or none), computed from its range alone, not from `preset`. A
+  press asks for the preset `today`, `thisWeek`, `thisMonth`, or `thisYear`: equal to the
+  period on screen it is loaded; inside the kept load it is served from it; otherwise loaded.
 - View history (FR-082, FR-083): the controller keeps a list of views, each a period with
   the rows it showed last (none while it has never loaded), and the position of the one on
   screen. A step of the user to another period cuts the list after the position, appends

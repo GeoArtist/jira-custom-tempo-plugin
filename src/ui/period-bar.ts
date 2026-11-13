@@ -1,5 +1,6 @@
-// Period selection in one framed box of three rows (FR-021 to FR-027, FR-055 to FR-057):
-// one day with the arrows, the presets, and the "Od" / "Do" date-time range.
+// Period selection in one framed box (FR-021 to FR-027, FR-055 to FR-057): three rows (one
+// day, the presets, the "Od" / "Do" date-time range) between two tall buttons that move to
+// the previous and the next period.
 import { formatInputValue, formatIsoDate, parseInputValue } from '../domain/format';
 import { isSameDate } from '../domain/local-date';
 import {
@@ -8,6 +9,8 @@ import {
   isSingleDay,
   isWholeDays,
   PANEL_PRESETS,
+  periodKind,
+  PRESET_KIND,
   type PanelPreset,
   type Period,
   type PeriodPoint,
@@ -30,7 +33,7 @@ export interface PeriodBar {
 const END_OF_DAY = 1439;
 
 export function createPeriodBar(options: PeriodBarOptions): PeriodBar {
-  const chips = new Map<PresetName, HTMLButtonElement>();
+  const chips = new Map<PanelPreset, HTMLButtonElement>();
   const chip = (name: PanelPreset): HTMLButtonElement => {
     const button = el('button', {
       class: 'wt-chip',
@@ -46,7 +49,7 @@ export function createPeriodBar(options: PeriodBarOptions): PeriodBar {
     el(
       'button',
       {
-        class: 'wt-chip wt-chip--arrow',
+        class: 'wt-period__step',
         attrs: { type: 'button', 'aria-label': direction < 0 ? pl.previousPeriod : pl.nextPeriod },
         on: { click: () => options.onShift(direction) },
       },
@@ -113,8 +116,8 @@ export function createPeriodBar(options: PeriodBarOptions): PeriodBar {
   const field = (id: string, label: string, input: HTMLInputElement): HTMLLabelElement =>
     el('label', { class: 'wt-field', attrs: { for: id } }, [el('span', { text: label }), input]);
 
-  const element = el('section', { class: 'wt-period' }, [
-    el('div', { class: 'wt-period__row wt-period__days' }, [arrow(-1), field('wt-day', pl.day, dayInput), arrow(1)]),
+  const body = el('div', { class: 'wt-period__body' }, [
+    el('div', { class: 'wt-period__row wt-period__days' }, [field('wt-day', pl.day, dayInput)]),
     el('div', { class: 'wt-period__row wt-period__presets' }, PANEL_PRESETS.map(chip)),
     el('div', { class: 'wt-period__row wt-period__range' }, [
       field('wt-from', pl.from, fromInput),
@@ -122,6 +125,8 @@ export function createPeriodBar(options: PeriodBarOptions): PeriodBar {
     ]),
     error,
   ]);
+  // The steps stand at the two ends of the box, as tall as its three rows (FR-084).
+  const element = el('section', { class: 'wt-period' }, [arrow(-1), body, arrow(1)]);
 
   return {
     element,
@@ -130,8 +135,11 @@ export function createPeriodBar(options: PeriodBarOptions): PeriodBar {
       if (current && current !== period) error.hidden = true;
       current = period;
       fill(period);
+      // Like radio buttons: the kind of the period stays selected while the arrows move it
+      // to another day, week, month, or year (FR-085).
+      const kind = periodKind(period);
       for (const [name, button] of chips) {
-        const active = period.preset === name;
+        const active = PRESET_KIND[name] === kind;
         button.setAttribute('aria-pressed', String(active));
         button.classList.toggle('wt-chip--active', active);
       }

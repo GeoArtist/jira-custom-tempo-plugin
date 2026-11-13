@@ -13,10 +13,10 @@ import {
 
 test('a week shows dated entries, a range title, the bar chart, and neutral totals', async ({ page }) => {
   await openPanel(page);
-  await chip(page, 'Ten tydzień').click();
+  await chip(page, 'Tydzień').click();
 
   await expect(page.locator('.wt-title')).toHaveText('02-11-2026 – 08-11-2026 · 22h 40m');
-  await expect(chip(page, 'Ten tydzień')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chip(page, 'Tydzień')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#wt-from')).toHaveValue('2026-11-02T00:00');
   await expect(page.locator('#wt-to')).toHaveValue('2026-11-08T23:59');
   await expect(rows(page)).toHaveCount(3);
@@ -41,25 +41,33 @@ test('a week shows dated entries, a range title, the bar chart, and neutral tota
   expect(await paintedColour(titleTotal(page))).not.toEqual(text);
 });
 
-test('yesterday and the arrows', async ({ page }) => {
+test('the day button, yesterday, and the arrows', async ({ page }) => {
   await openPanel(page);
-  await chip(page, 'Wczoraj').click();
+  await page.getByRole('button', { name: 'Poprzedni okres' }).click();
   await expect(page.locator('.wt-title')).toHaveText('Czwartek 05-11-2026 · 0h 30m');
 
   await page.getByRole('button', { name: 'Następny okres' }).click();
   await expect(page.locator('.wt-title')).toHaveText('Piątek 06-11-2026 · 10h 10m');
-  // Today has no button of its own: the day field names it and no preset is selected.
+  // A whole day keeps "Dzień" selected, whichever day the arrows reach (FR-085).
   await expect(page.locator('#wt-day')).toHaveValue('2026-11-06');
-  await expect(page.locator('.wt-chip[aria-pressed="true"]')).toHaveCount(0);
+  await expect(page.locator('.wt-chip[aria-pressed="true"]')).toHaveText(['Dzień']);
 
   await page.getByRole('button', { name: 'Poprzedni okres' }).click();
-  await expect(chip(page, 'Wczoraj')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chip(page, 'Dzień')).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Poprzedni okres' }).click();
   await expect(page.locator('.wt-title__text')).toHaveText('Środa 04-11-2026');
   await expect(page.locator('#wt-day')).toHaveValue('2026-11-04');
 
   await page.getByRole('button', { name: 'Poprzedni okres' }).click();
   await expect(page.locator('.wt-title__text')).toHaveText('Wtorek 03-11-2026');
+  await expect(page.locator('.wt-chip[aria-pressed="true"]')).toHaveText(['Dzień']);
+
+  // The button returns to today from any day.
+  await chip(page, 'Dzień').click();
+  await expect(page.locator('.wt-title')).toHaveText('Piątek 06-11-2026 · 10h 10m');
+  // A part of a day is no whole day: nothing is selected.
+  await page.locator('#wt-from').fill('2026-11-06T10:00');
+  await expect(page.locator('.wt-title__text')).toHaveText('Piątek 06-11-2026 10:00–23:59');
   await expect(page.locator('.wt-chip[aria-pressed="true"]')).toHaveCount(0);
 });
 
@@ -88,12 +96,12 @@ test('a range that ends before it starts is rejected in Polish', async ({ page }
 
 test('changing "Od" to another day moves "Do" to that day', async ({ page }) => {
   await openPanel(page);
-  await chip(page, 'Ten tydzień').click();
+  await chip(page, 'Tydzień').click();
   await expect(page.locator('#wt-to')).toHaveValue('2026-11-08T23:59');
   await page.locator('#wt-from').fill('2026-11-05T00:00');
   await expect(page.locator('#wt-to')).toHaveValue('2026-11-05T23:59');
   await expect(page.locator('.wt-title')).toHaveText('Czwartek 05-11-2026 · 0h 30m');
-  await expect(chip(page, 'Wczoraj')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chip(page, 'Dzień')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('the day field shows one whole day', async ({ page }) => {
@@ -108,22 +116,17 @@ test('the day field shows one whole day', async ({ page }) => {
 test('the period box has three rows and the year presets', async ({ page }) => {
   await openPanel(page);
   await expect(page.locator('.wt-period__row')).toHaveCount(3);
-  await chip(page, 'Ten rok').click();
+  await chip(page, 'Rok').click();
   await expect(page.locator('.wt-title__text')).toHaveText('01-01-2026 – 31-12-2026');
   await expect(page.locator('.wt-progress')).toHaveClass(/wt-progress--chart/);
   await expect(page.locator('.wt-chart__bar')).toHaveCount(12);
   await expectInsideWindow(page);
 });
 
-test('the period box offers one day with the arrows, four presets, and the range', async ({ page }) => {
+test('the period box offers one day, four presets, and the range, between the two steps', async ({ page }) => {
   await openPanel(page);
-  await expect(page.locator('.wt-period__days .wt-chip')).toHaveCount(2);
-  await expect(page.locator('.wt-period__presets .wt-chip')).toHaveText([
-    'Wczoraj',
-    'Ten tydzień',
-    'Ten miesiąc',
-    'Ten rok',
-  ]);
+  await expect(page.locator('.wt-period > .wt-period__step')).toHaveCount(2);
+  await expect(page.locator('.wt-period__presets .wt-chip')).toHaveText(['Dzień', 'Tydzień', 'Miesiąc', 'Rok']);
   await expect(page.locator('label[for="wt-from"] span')).toHaveText('Od:');
   await expect(page.locator('label[for="wt-to"] span')).toHaveText('Do:');
 });

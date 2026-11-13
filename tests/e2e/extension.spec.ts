@@ -2,7 +2,7 @@
 // Jira Cloud address. The network is intercepted: the "Jira site" and its REST API are
 // answered here, so no real Jira and no sign-in are needed. This proves the parts the demo
 // page cannot: the manifest, the content script injection, the session-based requests.
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chromium, expect, test, type BrowserContext, type Route } from '@playwright/test';
 
@@ -20,6 +20,11 @@ const worklog = (id: string, issueId: string, minutes: number, accountId = 'me')
   author: { accountId },
   started: new Date().toISOString(),
   timeSpentSeconds: minutes * 60,
+});
+
+test('the built folder carries the installation guide, unchanged', () => {
+  const guide = 'BrowserInstallation.md';
+  expect(readFileSync(resolve(EXTENSION, guide), 'utf8')).toBe(readFileSync(resolve(guide), 'utf8'));
 });
 
 /** A context with the extension installed and a fake Jira site behind the Jira address. */
@@ -112,8 +117,8 @@ test.describe('the built extension on a Jira Cloud address', () => {
       const pressed = (name: string) => page.getByRole('button', { name, exact: true });
 
       await launcher.click();
-      await pressed('Wczoraj').click();
-      await expect(pressed('Wczoraj')).toHaveAttribute('aria-pressed', 'true');
+      await page.getByRole('button', { name: 'Poprzedni okres' }).click();
+      await expect(pressed('Dzień')).toHaveAttribute('aria-pressed', 'true');
       const day = await page.locator('#wt-day').inputValue();
 
       // Three rounds of minimise and reopen with the launcher: the period stays.
@@ -123,22 +128,22 @@ test.describe('the built extension on a Jira Cloud address', () => {
         await expect(launcher).not.toContainText('Dziś');
         await launcher.click();
         await expect(page.locator('.wt-panel')).toBeVisible();
-        await expect(pressed('Wczoraj')).toHaveAttribute('aria-pressed', 'true');
+        await expect(pressed('Dzień')).toHaveAttribute('aria-pressed', 'true');
         await expect(page.locator('#wt-day')).toHaveValue(day);
       }
 
       // A custom range survives too.
-      await pressed('Ten miesiąc').click();
+      await pressed('Miesiąc').click();
       await launcher.click();
       await expect(launcher).toContainText('Zakres:');
       await launcher.click();
-      await expect(pressed('Ten miesiąc')).toHaveAttribute('aria-pressed', 'true');
+      await expect(pressed('Miesiąc')).toHaveAttribute('aria-pressed', 'true');
 
       // Only the close button goes back to today.
       await page.getByRole('button', { name: 'Zamknij' }).click();
       await expect(launcher).toHaveText('Dziś: 4h 15m');
       await launcher.click();
-      await expect(page.locator('.wt-chip[aria-pressed="true"]')).toHaveCount(0);
+      await expect(page.locator('.wt-chip[aria-pressed="true"]')).toHaveText(['Dzień']);
       await expect(page.locator('#wt-day')).not.toHaveValue(day);
     } finally {
       await context.close();

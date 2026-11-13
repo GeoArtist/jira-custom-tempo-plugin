@@ -322,6 +322,41 @@ Single front-end project at the repository root: `src/`, `tests/`, `scripts/`, `
 
 ---
 
+## Phase 17: The installation guide in the build
+
+**Purpose**: `BrowserInstallation.md` is always copied into `dist/extension`, requested on 2026-11-13.
+
+- [X] T122 `vite.config.ts`: a build plugin that emits `BrowserInstallation.md` into the extension build (not the demo build); the build fails when the guide is missing. `tests/e2e/extension.spec.ts` checks the copy. `README.md`, `plan.md`, and `quickstart.md` name it.
+
+---
+
+## Phase 18: The period steps, Amendment 12
+
+**Purpose**: The previous and next arrows move beside the three rows of the period box, as round buttons at the middle of their height, requested on 2026-11-13 (spec Amendment 12; FR-055, FR-084).
+
+- [X] T123 [US3] `src/ui/period-bar.ts`: the box holds the previous step, a body with the three rows, and the next step (`wt-period__step`, `wt-period__body`); `src/styles/app.scss`: a three-column grid, the group as wide as its widest row and centred, the steps as circles at the middle of the rows and the hover of the other buttons, side by side above the rows at 600 px and narrower; update `tests/ui/period-bar.test.ts`, `tests/e2e/periods.spec.ts`, `tests/e2e/layout.spec.ts` (FR-084).
+
+---
+
+## Phase 19: The period buttons, Amendment 13
+
+**Purpose**: "Dzień", "Tydzień", "Miesiąc", "Rok" for the current day, week, month, and year, selected like radio buttons by the kind of period, requested on 2026-11-13 (spec Amendment 13; FR-022, FR-085).
+
+- [X] T124 [US3] `src/domain/period.ts`: `PanelPreset` is `today`, `thisWeek`, `thisMonth`, `thisYear`; add `PeriodKind`, `PRESET_KIND`, and `periodKind`; `src/i18n/pl.ts`: the four names; `src/ui/period-bar.ts`: the selected button follows the kind of the period (FR-022, FR-085).
+- [X] T125 [US3] `src/ui/controller.ts`: `selectPreset` loads the period when it is already on screen and otherwise serves it from the kept load when it lies inside it (FR-085).
+- [X] T126 Update the tests to the new names and behaviour (`tests/ui/period-bar.test.ts`, `tests/ui/app.test.ts`, and the browser tests that used "Wczoraj"); update `README.md`, `contracts/ui.md`, `data-model.md`, `quickstart.md`.
+- [ ] T127 MANUAL: repeat T072 with scenarios 79 to 83 of `specs/001-worktime-panel/quickstart.md` on a real Jira Cloud site.
+
+---
+
+## Phase 20: The minimise button, Amendment 14
+
+**Purpose**: A header button that hides the panel like the launcher does, requested on 2026-11-13 (spec Amendment 14; FR-086).
+
+- [X] T128 [US5] `src/ui/header.ts`: the button "Minimalizuj" between settings and close with `onMinimise`; the icon `minimise` in `src/ui/dom.ts`; the text in `src/i18n/pl.ts`; `src/ui/app.ts` wires it to the same function as the launcher; tests in `tests/ui/header.test.ts`, `tests/ui/app.test.ts`, `tests/e2e/layout.spec.ts`; `contracts/ui.md`, `quickstart.md` scenario 84, `README.md` (FR-086).
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -414,7 +449,8 @@ Each step leaves a working, tested panel.
 - Changed 2026-11-13, by the requester's decision: the bar chart (spec Amendment 9). Phase 14 records it. It replaces the faded inactive bar of T077.
 - Changed 2026-11-13, by the requester's decision: selecting a bar of the chart (spec Amendment 10). Phase 15 records it.
 - Changed 2026-11-13, by the requester's decision: back and forward through the views (spec Amendment 11). Phase 16 records it.
-- Seven tasks are MANUAL (T072, T084, T094, T103, T111, T116, T121). Earlier manual tasks (T016, T060): they need an Atlassian account, `forge login`, and a Jira Cloud site. Everything else can be done and verified locally.
+- Changed 2026-11-13, by the requester's decision: the period arrows beside the rows and the buttons "Dzień", "Tydzień", "Miesiąc", "Rok" (spec Amendments 12 and 13). Phases 18 and 19 record them.
+- Eight tasks are MANUAL (T072, T084, T094, T103, T111, T116, T121, T127). Earlier manual tasks (T016, T060): they need an Atlassian account, `forge login`, and a Jira Cloud site. Everything else can be done and verified locally.
 - Node.js on the development machine is 22.23.2; the Forge CLI needs 22.23.4 or later. Local build and tests are not affected; T016 and T060 are.
 - Plan deltas D4 (table scrolls inside itself) and D5 (no auto-refresh in a hidden tab) are built in T026 and T042. If the requester rejects either, change those two tasks.
 - `specs/001-worktime-panel/checklists/ux.md` has 36 unchecked review items. `/speckit-implement` reads checklist state as a gate and will ask before proceeding while they are unchecked.

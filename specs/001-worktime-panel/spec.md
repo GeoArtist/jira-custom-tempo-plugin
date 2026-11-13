@@ -30,6 +30,12 @@
 
 **Amendment 2026-11-13 (11)**: going back and forward through the views, requested on 2026-11-13: two buttons beside "Odśwież", "Cofnij" and "Ponów", return to the previous view and to the one the user came back from, up to 10 steps back, from remembered data; a button with nowhere to go is disabled; both react to the pointer like the other buttons (User Story 3; new FR-082, FR-083).
 
+**Amendment 2026-11-13 (12)**: the previous and next period arrows, requested on 2026-11-13 with a marked screenshot: they leave the row of the day and become two rounded rectangles right beside the three rows of the period box, at their left and their right, as tall as the rows together (corrected the same day: beside the rows, not at the ends of the frame; and round again, as before, at the middle of the three rows) (User Story 3; FR-055; new FR-084).
+
+**Amendment 2026-11-13 (13)**: the four period buttons, requested on 2026-11-13: they are named "Dzień", "Tydzień", "Miesiąc", "Rok" and select the current day, week, month, and year ("Wczoraj" is gone; yesterday is one press of the previous arrow). They behave like radio buttons: the one for the kind of period on screen stays selected while the arrows move by one day, week, month, or year. A press always returns to the current one, from the loaded data when it is there (User Stories 3, 5; FR-022, FR-055, FR-081; new FR-085).
+
+**Amendment 2026-11-13 (14)**: a minimise button, requested on 2026-11-13: between the settings button and the close button, with the sign of a window's minimise button; it hides the panel exactly as a click on the launcher does, and everything stays as it was (User Story 5; FR-064; new FR-086).
+
 ## Inspiration Images
 
 The two mock-ups supplied with the request are stored with this spec. They show the intended look
@@ -142,13 +148,13 @@ and confirm the shown entries and totals match the logged data for exactly that 
 
 1. **Given** the plugin was just opened, **When** nothing else is selected, **Then** the period
    is the whole current day and the "Dzień:" field shows today's date.
-2. **Given** the user selects "Wczoraj", **When** data loads, **Then** only yesterday's entries
+2. **Given** the user presses the previous arrow on today, **When** data loads, **Then** only yesterday's entries
    are shown and the title shows yesterday's Polish day name and date.
-3. **Given** today is Thursday, **When** the user selects "Ten tydzień", **Then** entries from
+3. **Given** today is Thursday, **When** the user selects "Tydzień", **Then** entries from
    Monday through Sunday of the current week are included.
-4. **Given** "Ten tydzień" is shown, **When** the user presses the previous arrow, **Then**
+4. **Given** "Tydzień" is shown, **When** the user presses the previous arrow, **Then**
    entries from Monday through Sunday of the previous week are included.
-5. **Given** the user selects "Ten miesiąc", or presses the previous arrow on it, **When** data
+5. **Given** the user selects "Miesiąc", or presses the previous arrow on it, **When** data
    loads, **Then** entries from the first through the last day of that month are included.
 6. **Given** the user sets "Od" 02-11-2026 00:00 and "Do" 04-11-2026 23:59, **When** data loads,
    **Then** entries from all three days are included and no preset is highlighted.
@@ -163,9 +169,9 @@ and confirm the shown entries and totals match the logged data for exactly that 
 10. **Given** a period longer than one day, **When** data is shown, **Then** a bar chart with one
     bar per day stands in place of the progress bar, and the total in the title and the total
     below the table are in the normal text colour.
-18. **Given** "Ten tydzień" is shown, **When** the user moves the pointer over the bar of a day,
+18. **Given** "Tydzień" is shown, **When** the user moves the pointer over the bar of a day,
     **Then** that bar is drawn at full strength and a tip names the day and its total.
-19. **Given** "Ten rok" is shown, **When** the user looks at the chart, **Then** it has one bar
+19. **Given** "Rok" is shown, **When** the user looks at the chart, **Then** it has one bar
     per month; **When** they zoom in, **Then** it has one bar per day and scrolls sideways.
 20. **Given** a period of more than 24 months, **When** data is shown, **Then** the chart has one
     bar per year, and zooming in shows months and then days.
@@ -174,13 +180,13 @@ and confirm the shown entries and totals match the logged data for exactly that 
 12. **Given** the user sets a "Do" date and time earlier than the "Od" date and time, **When**
     they confirm, **Then** the plugin shows a Polish validation message and keeps the previous
     period.
-13. **Given** "Ten tydzień" is shown, **When** the user changes "Od" to 05-11-2026, **Then** "Do"
+13. **Given** "Tydzień" is shown, **When** the user changes "Od" to 05-11-2026, **Then** "Do"
     becomes 05-11-2026 23:59 by itself and that single day is shown.
 14. **Given** the user picks 15-10-2026 in the "Dzień:" field, **When** data loads, **Then** the
     whole of that day is shown, and "Od" and "Do" show 15-10-2026 00:00 and 23:59.
-15. **Given** the user selects "Ten rok", **When** data loads, **Then** entries from 1 January
+15. **Given** the user selects "Rok", **When** data loads, **Then** entries from 1 January
     through 31 December of this year are included, and the arrows move by one year.
-16. **Given** "Wczoraj" is shown, **When** the user presses the previous arrow, **Then** the day
+16. **Given** yesterday is shown, **When** the user presses the previous arrow, **Then** the day
     before yesterday is shown, the "Dzień:" field shows its date, and no preset is highlighted.
 17. **Given** another day is shown, **When** the user picks today's date in the "Dzień:" field or
     presses the close button and opens the panel again, **Then** today is shown.
@@ -251,8 +257,8 @@ was.
    underneath is unchanged.
 4. **Given** the panel was closed with the close button while showing another period, **When**
    the user opens it again, **Then** it shows "Dziś".
-8. **Given** the panel shows "Wczoraj" and was minimised with the launcher or the Escape key,
-   **When** the user opens it again, **Then** it still shows "Wczoraj", with fresh data.
+8. **Given** the panel shows yesterday and was minimised with the launcher or the Escape key,
+   **When** the user opens it again, **Then** it still shows yesterday, with fresh data.
 9. **Given** the pointer is over the launcher or any other button, **When** the user looks at
    it, **Then** its colour differs from its resting colour; a selected option changes the
    other way round, from filled to outlined.
@@ -441,8 +447,8 @@ in settings, save, reopen Jira, and confirm it is still light and every element 
   screen changes at once, without the loading state. Further bars selected inside the same
   load (a month of a year, then a day of that month) are served the same way. "Odśwież" and
   auto-refresh load the period on screen from Jira as before, and from then on that load is
-  the one bars are served from. Every other change of period (presets, arrows, fields) loads
-  from Jira as before.
+  the one bars are served from. The four period buttons use it in the same way (FR-085).
+  The arrows and the fields load from Jira as before.
 - **FR-082**: The header MUST have two buttons before "Odśwież": "Cofnij" returns to the
   view the user was on before the current one, "Ponów" to the view the user went back from.
   A view is a period; every change of period by the user is a step: a preset, an arrow, the
@@ -458,6 +464,13 @@ in settings, save, reopen Jira, and confirm it is still light and every element 
   never finished loading is loaded. The zoom of the chart and the sort order of the table
   are not part of a view. The view on screen is refreshed as before by "Odśwież" and by
   auto-refresh.
+- **FR-086**: The header MUST have a minimise button between the settings button and the
+  close button, drawn as a short line at the foot of the button, as on a window's title bar,
+  named "Minimalizuj". It MUST do what a click on the launcher of the open panel does: the
+  panel is hidden and nothing is forgotten (the period, the steps of back and forward, the
+  zoom of the chart, the sort order, the size and the place); the launcher keeps showing the
+  panel's period; the next opening continues there with fresh data (FR-064). The close
+  button keeps its own meaning: it starts again on today.
 - **FR-020**: Nothing MUST be written under the progress bar, and no text of the plugin may
   mention the norm; the 8-hour mark on the bar's scale is its only sign. (Until Amendment 7 a
   caption under the bar stated the total and whether the norm was reached.)
@@ -474,14 +487,32 @@ in settings, save, reopen Jira, and confirm it is still light and every element 
 **Period selection**
 
 - **FR-021**: When opened, the plugin MUST show the current day (whole day) by default.
-- **FR-022**: The user MUST be able to select these periods with a single action: "Wczoraj",
-  "Ten tydzień", "Ten miesiąc", "Ten rok". A year runs from 1 January to 31 December. Every
-  other day, week, month, or year is reached with the arrows, the "Dzień:" field, or "Od:" and
-  "Do:". (Until Amendment 8 there were also "Dziś", "Przedwczoraj", "Poprzedni tydzień",
-  "Poprzedni miesiąc", and "Poprzedni rok".)
+- **FR-022**: The user MUST be able to select these periods with a single action: the
+  current day ("Dzień"), the current week ("Tydzień"), the current month ("Miesiąc"), and
+  the current year ("Rok"). A year runs from 1 January to 31 December. Every other day,
+  week, month, or year is reached with the arrows, the "Dzień:" field, or "Od:" and "Do:".
+  (Until Amendment 8 there were also "Dziś", "Przedwczoraj", "Poprzedni tydzień",
+  "Poprzedni miesiąc", and "Poprzedni rok"; until Amendment 13 the buttons were "Wczoraj",
+  "Ten tydzień", "Ten miesiąc", "Ten rok".)
+- **FR-085**: The four buttons MUST behave like radio buttons for the kind of period: the
+  button is shown selected whenever the period on screen is one whole day, one whole
+  Monday-to-Sunday week, one whole calendar month, or one whole calendar year, whichever
+  day, week, month, or year that is and however it was reached (button, arrows, fields, a
+  bar of the chart, back and forward). The arrows therefore keep it selected. No button is
+  selected for any other range. Pressing a button MUST always show the current day, week,
+  month, or year, also when its button is already selected for another one. When that
+  period lies inside the period loaded last, it is shown from that load without a request
+  (as in FR-081); pressed while its period is already on screen, it loads it again.
 - **FR-055**: Everything that selects the period MUST stand in one box with a light frame, in
-  three rows, each centred and packed with equal gaps: (1) previous arrow, the "Dzień:" field,
-  next arrow; (2) "Wczoraj", "Ten tydzień", "Ten miesiąc", "Ten rok"; (3) "Od:" and "Do:".
+  three rows, each centred and packed with equal gaps: (1) the "Dzień:" field; (2) "Dzień",
+  "Tydzień", "Miesiąc", "Rok"; (3) "Od:" and "Do:". (Until Amendment 12 the
+  arrows stood in row 1.)
+- **FR-084**: The buttons to the previous and to the next period MUST stand inside the frame
+  right beside the three rows, one at their left and one at their right, after the normal
+  gap from the widest row and not at the ends of the frame; the group stays centred. Each is
+  a round button with the arrow in its middle, like the other round controls, standing at
+  the middle of the height of the three rows together. They react to the pointer like the other buttons.
+  In a window too narrow for a column at each side they share one line above the rows.
 - **FR-057**: The "Dzień:" field MUST let the user pick one calendar day, without a time, and
   MUST then show that whole day (00:00 to 23:59). It MUST show the day whenever the period is
   exactly one whole day, and be empty otherwise.
@@ -792,6 +823,29 @@ in settings, save, reopen Jira, and confirm it is still light and every element 
 - No keyboard shortcut is added: Alt with the arrows belongs to the browser's own history.
 - In a narrow window the five header buttons do not fit beside the title; the title gets a
   line of its own above them.
+
+**Choices made for Amendment 12 (2026-11-13)**
+
+- "Na trzy kolumny szerokie" is read with the marked screenshot as: as tall as the three rows.
+- First built as rounded rectangles as tall as the rows; the requester then asked for the
+  earlier look in the new place: circles of one control (32 px; 44 px on touch), each in the
+  middle of a column that runs along the three rows.
+- At 600 px and narrower the two buttons stand side by side above the rows, each in the
+  middle of its half of the box, because two side columns would leave the fields too little room.
+
+**Choices made for Amendment 13 (2026-11-13)**
+
+- The requester confirmed: "Dzień" is today, "Tydzień" the current week, and so on; the
+  arrows keep the button selected; a press gives the current one again, from the cache when
+  possible.
+- This replaces the choice of Amendment 10 that only a bar is served from the loaded data.
+  The data shown that way is as old as the last load; pressing the selected button again,
+  "Odśwież", or auto-refresh renews it.
+- The button "Dzień" and the field label "Dzień:" stand in different rows of the same box:
+  the button jumps to today, the field picks any day.
+- The buttons stay toggle buttons for assistive technology (`aria-pressed`); at most one is
+  pressed.
+- The launcher keeps "Dziś:" for today.
 
 **Taken from the mock-ups, not from the written list**
 

@@ -21,10 +21,10 @@ commands shown here.
 | Command | Does | Expected result |
 |---------|------|-----------------|
 | `vp install` | Installs pinned dependencies | No changes to `package-lock.json` |
-| `vp run dev` | Serves a stand-in Jira page with the add-on and a faked Jira at `http://127.0.0.1:5173/` | The launcher shows in the corner; "Ten tydzień" and then the previous arrow show the sample data (2 to 6 November 2026) |
+| `vp run dev` | Serves a stand-in Jira page with the add-on and a faked Jira at `http://127.0.0.1:5173/` | The launcher shows in the corner; "Tydzień" and then the previous arrow show the sample data (2 to 6 November 2026) |
 | `vp test run` | Unit and UI tests (no Jira needed) | All pass |
 | `vp check` | Format, lint, and type checks (`--fix` repairs formatting) | No findings |
-| `vp run build` | Builds the extension into `dist/extension/` and checks its size | `content.js`, `manifest.json`, `icons/`; at most 100 kB gzipped |
+| `vp run build` | Builds the extension into `dist/extension/` and checks its size | `content.js`, `manifest.json`, `icons/`, and a copy of `BrowserInstallation.md`; at most 100 kB gzipped |
 | `vp run icons` | Draws `extension/icons/icon-*.png` from `scripts/icon.svg` | four PNG files (16, 32, 48, 128 px); needed only after the drawing changes |
 | `vp run test:e2e` | Builds, then runs the browser tests: the stand-in page at 320 px, 1280 px, and 1920 px, and the real extension in Chromium | All pass |
 | `vp run check` | All of the above: the full merge gate | All pass |
@@ -77,8 +77,8 @@ Open any page of the Jira site while signed in.
 | 4 | US1 | Check ticket A | The other user's entry is absent; the long title wraps and nothing overflows |
 | 5 | US1 | Click a ticket number | The Jira ticket opens in a new tab |
 | 6 | US2 | Look at the bar | Blue-to-green up to 8h, yellow beyond; nothing is written under the bar; both totals yellow |
-| 7 | US3 | Click "Wczoraj" | One row (B); title shows yesterday's weekday and date; the launcher shows yesterday's date and total |
-| 8 | US3 | Click "Ten tydzień" | Entries show a `dd-mm` date; title shows the Monday-to-Sunday range; "Od" is Monday 00:00 and "Do" is Sunday 23:59; the bar is light gray with no fill and both totals are in the normal text colour |
+| 7 | US3 | Press the previous arrow on today | One row (B); title shows yesterday's weekday and date; the launcher shows yesterday's date and total |
+| 8 | US3 | Click "Tydzień" | Entries show a `dd-mm` date; title shows the Monday-to-Sunday range; "Od" is Monday 00:00 and "Do" is Sunday 23:59; the bar is light gray with no fill and both totals are in the normal text colour |
 | 9 | US3 | Set "Od" today 10:00 and "Do" today 12:00 | Only entries starting 10:00 to 12:00 are shown (B 10:30, C 11:00); total 2h 15m; title shows the weekday, date, and `10:00–12:00`; the bar is active |
 | 10 | US3 | Set a "Do" date and time earlier than "Od" | Polish validation message; period unchanged |
 | 11 | US3 | Press the previous arrow on today | Yesterday is shown |
@@ -95,21 +95,21 @@ Open any page of the Jira site while signed in.
 | 22 | all | Make the browser window narrow (about 320 to 400 px) | Launcher and panel fit; everything usable; no horizontal scrolling |
 | 23 | all | Select a period with no logged time | "Brak wpisów czasu w wybranym okresie."; totals 0h 00m; empty bar |
 
-| 24 | US3 | Look at the period box | One light frame, three rows: arrows around "Dzień:"; then "Wczoraj", "Ten tydzień", "Ten miesiąc", "Ten rok"; then "Od:" and "Do:" |
-| 25 | US3 | Click "Ten tydzień", then change "Od" to another day of that week | "Do" jumps to the same day 23:59; that single day is shown; the bar is active again |
+| 24 | US3 | Look at the period box | One light frame, three rows between the two arrow buttons: "Dzień:"; then "Dzień", "Tydzień", "Miesiąc", "Rok"; then "Od:" and "Do:" |
+| 25 | US3 | Click "Tydzień", then change "Od" to another day of that week | "Do" jumps to the same day 23:59; that single day is shown; the bar is active again |
 | 26 | US3 | Pick a day in "Dzień:" | That whole day is shown; "Od" and "Do" show it from 00:00 to 23:59 |
-| 27 | US3 | Click "Ten rok", then the previous arrow | 01-01 to 31-12 of this year, then of the previous year (no preset highlighted); the chart shows twelve months |
+| 27 | US3 | Click "Rok", then the previous arrow | 01-01 to 31-12 of this year, then of the previous year ("Rok" stays selected); the chart shows twelve months |
 | 28 | US2 | Move the pointer over the progress bar | A small two-line tip: the period as in the title, and "Suma czasu:" with the total in the bar colour |
 | 29 | US1 | Click each column header twice | The rows sort by that column, ascending then descending; a triangle shows the direction |
 | 30 | US1 | Select a period with one or two rows | The panel keeps its height; the rows are at the top, the space below is empty, "Suma czasu:" stays at the bottom right in the colour of its value |
-| 31 | US5 | Select "Wczoraj", click the launcher twice; then press Escape and click the launcher | "Wczoraj" is still shown each time |
-| 32 | US5 | Select "Wczoraj", press ×, click the launcher | Today is shown |
+| 31 | US5 | Go to yesterday with the previous arrow, click the launcher twice; then press Escape and click the launcher | Yesterday is still shown each time |
+| 32 | US5 | Go to yesterday, press ×, click the launcher | Today is shown |
 | 33 | US5 | Move the pointer over the launcher | Its background and border change colour |
 | 34 | US6 | Open the settings | A line under "Ustawienia"; the switch stands after "Tryb ciemny" with a sun and a moon, and its knob slides when clicked |
 | 35 | US5 | Look at the browser's extensions page and toolbar | The extension shows the clock-and-timeline icon |
 
 | 36 | US5 | Look at the launcher on a Jira page that has Jira's own button in the corner | The launcher stands to the left of it; nothing overlaps |
-| 37 | US5 | Select "Wczoraj", then "Ten tydzień", then minimise | The launcher shows yesterday's date with its total, then "Zakres:" with the week's total, and keeps it while minimised |
+| 37 | US5 | Go to yesterday, then select "Tydzień", then minimise | The launcher shows yesterday's date with its total, then "Zakres:" with the week's total, and keeps it while minimised |
 | 38 | US5 | Press × and look at the launcher | "Dziś:" with today's total again |
 | 39 | all | Select a period with no logged time | "0h 00m" is gray in the title, in the whole "Suma czasu:" row, and on the launcher with its dot |
 | 40 | all | Move the pointer over buttons and presets, then over the selected preset | Each gets a tinted background and a blue border; the selected one turns from filled to outlined |
@@ -133,23 +133,29 @@ Open any page of the Jira site while signed in.
 | 57 | US6 | Open the settings and move the pointer over "Odświeżaj co" and over "min" | No explanation is written under the field; the tooltip "0 = automatyczne odświeżanie wyłączone (domyślnie 5 min)" appears |
 | 58 | US5 | Make the panel as tall as it goes, then drag the launcher to the middle of the window, to each corner, and to each edge | The panel and the launcher are always wholly inside the window and never cover each other; in the middle the panel gets lower by itself and scrolls; back in a corner it has the chosen height again |
 | 59 | US5 | Put the launcher at the top left, open the panel, make the browser window narrow, then wide again; do the same with its height | The panel stays attached to the launcher the whole time; when the window is wide again the panel is back in line with the launcher's edge |
-| 60 | US3 | Select "Ten tydzień" | A bar chart stands where the progress bar was: seven bars that do not touch, days under them, hours at the side, a dashed line at 8h; the panel keeps its size |
+| 60 | US3 | Select "Tydzień" | A bar chart stands where the progress bar was: seven bars that do not touch, days under them, hours at the side, a dashed line at 8h; the panel keeps its size |
 | 61 | US3 | Compare the bars with the days in the table | Each bar is as tall as the time of its day; a day up to 8h is blue to green, a longer one yellow to red; an empty day has no bar |
 | 62 | US3 | Move the pointer over a bar, then over an empty day | The bar gets brighter and a tip shows the day and "Suma czasu:" with its total; the empty day shows 0h 00m |
-| 63 | US3 | Select "Ten miesiąc", then "Ten rok" | A bar per day of the month; then twelve bars, one per month, with "Przybliż" and "Oddal" at the right |
+| 63 | US3 | Select "Miesiąc", then "Rok" | A bar per day of the month; then twelve bars, one per month, with "Przybliż" and "Oddal" at the right |
 | 64 | US3 | Press "Przybliż" on the year, scroll the chart, press "Oddal" | 365 bars of days that scroll sideways around the same part of the year; then twelve months again |
 | 65 | US3 | Hold Ctrl and turn the mouse wheel over a month | The chart zooms to days with that month under the pointer |
 | 66 | US3 | Set "Od:" and "Do:" three years apart | A bar per year; zooming in shows months, then days |
 | 67 | US3 | Focus the chart with Tab, press the arrow keys, then plus and minus | The tip walks through the bars; plus and minus zoom |
 | 68 | US3 | Go back to a single day | The progress bar is back |
-| 69 | US3 | Select "Ten rok" and click the bar of a month, with the browser's network tab open | The chart shows the days of that month, "Od:" and "Do:" its first and last day, the table only its entries; at once, with no spinner and no request to Jira |
+| 69 | US3 | Select "Rok" and click the bar of a month, with the browser's network tab open | The chart shows the days of that month, "Od:" and "Do:" its first and last day, the table only its entries; at once, with no spinner and no request to Jira |
 | 70 | US3 | Click the bar of a day in that month | The title names that day, the progress bar is back, the table shows only that day's entries; again no request |
 | 71 | US3 | Click the bar of a day without time | The message "Brak wpisów czasu w wybranym okresie." for that day, total 0h 00m |
 | 72 | US3 | After a click on a bar press "Odśwież" | The period stays; Jira is asked for it |
 | 73 | US3 | Focus the chart with Tab, choose a bar with the arrows, press Enter | The same as a click on that bar |
+| 79 | US3 | Look at the period box, then press its left and right button | A round button with an arrow right beside the rows at each side (not at the ends of the frame), at the middle of the three rows; they move to the previous and the next period and react to the pointer |
+| 80 | US3 | Open the panel; press the previous arrow three times; press "Dzień" | "Dzień" is selected from the start and stays selected on every day; the press returns to today |
+| 81 | US3 | Press "Miesiąc", the previous arrow twice, then "Miesiąc" again | "Miesiąc" stays selected on each month; the press returns to the current month |
+| 82 | US3 | Press "Rok", then "Tydzień", then "Dzień", with the network tab open; then "Dzień" once more | The week and the day appear at once with no request; the second press on "Dzień" asks Jira |
+| 83 | US3 | Set "Od:" and "Do:" to three days | No button is selected |
+| 84 | US5 | Go to another period, press the button with the low line between the gear and × | The panel disappears; the launcher keeps that period; a click on the launcher shows the same period, with "Cofnij" still enabled |
 | 74 | US3 | Open the panel and look at the buttons before "Odśwież" | "Cofnij" and "Ponów" (curved arrows) are both pale and do not react to the pointer |
-| 75 | US3 | Select "Ten rok", click a month, click a day; then press "Cofnij" three times, with the network tab open | The month, the year, and today come back in turn, at once, with no request; "Cofnij" is disabled at the end and "Ponów" is not |
-| 76 | US3 | Press "Ponów" twice, then select "Wczoraj" | The year and the month return; after "Wczoraj" the button "Ponów" is disabled |
+| 75 | US3 | Select "Rok", click a month, click a day; then press "Cofnij" three times, with the network tab open | The month, the year, and today come back in turn, at once, with no request; "Cofnij" is disabled at the end and "Ponów" is not |
+| 76 | US3 | Press "Ponów" twice, then press the previous arrow | The year and the month return; after that the button "Ponów" is disabled |
 | 77 | US3 | Press the previous arrow twelve times, then "Cofnij" until it is disabled | Ten steps back, not twelve |
 | 78 | US3 | Move the pointer over "Cofnij" while it is enabled; minimise and reopen the panel; close it with × and reopen | It reacts like "Odśwież"; the steps survive minimising; after × both buttons are disabled |
 

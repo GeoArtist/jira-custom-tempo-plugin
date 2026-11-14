@@ -1,6 +1,7 @@
-// The name of the person whose time is shown (002 FR-006), the title line with the total,
-// and the action buttons: back, forward, refresh, settings,
-// minimise, close (FR-012, FR-013, FR-029, FR-031, FR-041, FR-082, FR-086).
+// The header in two rows (004 FR-001 to FR-004). The title row: the name of the person whose
+// time is shown (002 FR-006), the title line with the total, and the two window buttons,
+// minimise and close. The toolbar: back, forward, refresh, reset (004 FR-009), settings
+// (FR-012, FR-013, FR-029, FR-031, FR-041, FR-082, FR-086).
 import { formatDuration, formatTitle } from '../domain/format';
 import type { Period } from '../domain/period';
 import type { PeriodSummary } from '../domain/summary';
@@ -11,6 +12,8 @@ export interface HeaderOptions {
   onBack(): void;
   onForward(): void;
   onRefresh(): void;
+  /** Back to the start view; the panel stays open (004 FR-010). */
+  onReset(): void;
   onSettings(): void;
   /** Hide the panel and keep everything as it is, like a click on the launcher (FR-086). */
   onMinimise(): void;
@@ -36,6 +39,11 @@ export interface Header {
   focusFallback(): void;
   /** Which of the back and forward buttons have somewhere to go (FR-082). */
   setHistory(canGoBack: boolean, canGoForward: boolean): void;
+  /**
+   * Whether there is something to reset. Switched off under the keyboard focus, the
+   * button hands the focus to the refresh button first (004 FR-015, FR-018).
+   */
+  setResettable(can: boolean): void;
   /** Moves the keyboard focus into the panel when it opens. */
   focus(): void;
 }
@@ -85,6 +93,19 @@ export function createHeader(options: HeaderOptions): Header {
     },
     [icon('refresh'), el('span', { text: pl.refresh })],
   );
+  // Switched off on the start view, where a press would change nothing (004 FR-015). The
+  // label names it, as for refresh; the tip repeats the name for the phone, where the label
+  // gives way to the sign.
+  const resetButton = el(
+    'button',
+    {
+      class: 'wt-button wt-button--reset',
+      attrs: { type: 'button', disabled: true },
+      on: { click: () => options.onReset() },
+    },
+    [icon('home'), el('span', { text: pl.reset })],
+  );
+  resetButton.title = pl.reset;
   const settingsButton = el(
     'button',
     {
@@ -114,17 +135,17 @@ export function createHeader(options: HeaderOptions): Header {
     [icon('close')],
   );
 
+  // The order of the elements is the reading order and the order of the Tab key (004 FR-006).
   const element = el('header', { class: 'wt-header' }, [
-    el('div', { class: 'wt-header__text' }, [person, title]),
-    el('div', { class: 'wt-header__actions' }, [
-      backButton,
-      forwardButton,
-      refreshButton,
-      settingsButton,
-      minimiseButton,
-      closeButton,
+    el('div', { class: 'wt-header__bar' }, [
+      el('div', { class: 'wt-header__text' }, [person, title]),
+      el('div', { class: 'wt-header__window' }, [minimiseButton, closeButton]),
     ]),
+    el('div', { class: 'wt-header__tools' }, [backButton, forwardButton, refreshButton, resetButton, settingsButton]),
   ]);
+
+  const hasFocus = (button: HTMLButtonElement): boolean =>
+    button === (button.getRootNode() as Document | ShadowRoot).activeElement;
 
   return {
     element,
@@ -145,12 +166,16 @@ export function createHeader(options: HeaderOptions): Header {
     },
     setHistory(canGoBack, canGoForward) {
       // A button that is switched off under the keyboard would lose the focus to the page.
-      const focused = [backButton, forwardButton].find(
-        (button) => button === (button.getRootNode() as Document | ShadowRoot).activeElement,
-      );
+      const focused = [backButton, forwardButton].find(hasFocus);
       backButton.disabled = !canGoBack;
       forwardButton.disabled = !canGoForward;
       if (focused?.disabled) (focused === backButton ? forwardButton : backButton).focus();
+    },
+    setResettable(can) {
+      // Refresh is never `disabled`, also while a load runs, so it can take the focus that
+      // the reset button would drop to the page (003 FR-030).
+      if (!can && hasFocus(resetButton)) refreshButton.focus();
+      resetButton.disabled = !can;
     },
     setBusy(value) {
       busy = value;

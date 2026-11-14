@@ -8,6 +8,7 @@ import type { TicketRow } from '../domain/worklog';
 import type { ExportFormat } from '../export/index';
 import { pl } from '../i18n/pl';
 import { applyTotal, clear, el } from './dom';
+import { createAbout } from './about';
 import { createExportMenu } from './export-menu';
 
 /** What the table has on screen: the only source of an exported file (003 FR-011). */
@@ -128,8 +129,14 @@ export function createTable(options: TableOptions = {}): Table {
     },
     onFocusLost: () => options.onFocusLost?.(),
   });
-  // Its place is kept also while the button is not shown: the row never changes its height.
-  const footer = el('div', { class: 'wt-footer' }, [exportMenu.element, totalLabel, total]);
+  // Three parts: the name of the add-on at the left, the export control in the middle, the
+  // total at the right (004 FR-023, FR-025). The place of the control is kept also while
+  // the button is not shown: the row never changes its height.
+  const footer = el('div', { class: 'wt-footer' }, [
+    createAbout(),
+    exportMenu.element,
+    el('div', { class: 'wt-footer__total' }, [totalLabel, total]),
+  ]);
   const element = el('section', { class: 'wt-table-wrap' }, [area, footer]);
 
   function setTotal(summary: PeriodSummary): void {

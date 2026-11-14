@@ -208,3 +208,110 @@ test('the export control and its menu are named, sized, and focusable (003 FR-00
   await expect(control).toHaveAttribute('aria-expanded', 'false');
   expect(await ring()).toBe(true);
 });
+
+// ---------------------------------------------------------------- the header in two rows (spec 004)
+
+const named = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
+
+/** Whether the focused element of the add-on shows the focus ring. */
+const hasRing = (page: Page): Promise<boolean> =>
+  page.evaluate(() => {
+    const node = document.getElementById('jira-custom-tempo')?.shadowRoot?.activeElement;
+    if (!node) return false;
+    const style = getComputedStyle(node);
+    return style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) >= 2;
+  });
+
+test('the header is walked in reading order (004 FR-006, SC-010)', async ({ page }) => {
+  await openPanel(page);
+  await expect(rows(page)).toHaveCount(3);
+  // Opening puts the focus on the close button, the second of the two window buttons.
+  await expect(named(page, 'Zamknij')).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(named(page, 'Minimalizuj')).toBeFocused();
+  expect(await hasRing(page)).toBe(true);
+  await page.keyboard.press('Tab');
+  await expect(named(page, 'Zamknij')).toBeFocused();
+
+  // On a new panel back, forward, and reset are switched off: Tab goes past them.
+  for (const name of ['Cofnij', 'Ponów', 'Resetuj']) await expect(named(page, name)).toBeDisabled();
+  for (const name of ['Odśwież', 'Ustawienia']) {
+    await page.keyboard.press('Tab');
+    await expect(named(page, name)).toBeFocused();
+    expect(await hasRing(page)).toBe(true);
+  }
+  // The period box follows the toolbar.
+  await page.keyboard.press('Tab');
+  expect(
+    await page.evaluate(() => {
+      const root = document.getElementById('jira-custom-tempo')?.shadowRoot;
+      return root?.activeElement?.closest('.wt-period') !== null && root?.activeElement !== null;
+    }),
+  ).toBe(true);
+
+  // With a view to go back to, every button of the toolbar that has a use is a stop.
+  await page.getByRole('button', { name: 'Miesiąc', exact: true }).click();
+  await expect(named(page, 'Resetuj')).toBeEnabled();
+  await named(page, 'Zamknij').focus();
+  for (const name of ['Cofnij', 'Odśwież', 'Resetuj', 'Ustawienia']) {
+    await page.keyboard.press('Tab');
+    await expect(named(page, name)).toBeFocused();
+    expect(await hasRing(page)).toBe(true);
+  }
+});
+
+test('the seven header buttons are touch targets that do not overlap (004 FR-007, SC-007)', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'phone', 'touch sizes apply to the phone layout');
+  await openPanel(page);
+  await expect(rows(page)).toHaveCount(3);
+
+  const measure = async () => {
+    for (const group of ['.wt-header__window button', '.wt-header__tools button']) {
+      const boxes = await page.locator(group).evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const rect = node.getBoundingClientRect();
+          return { left: rect.left, right: rect.right, width: rect.width, height: rect.height };
+        }),
+      );
+      expect(boxes).toHaveLength(group.includes('window') ? 2 : 5);
+      for (const [index, box] of boxes.entries()) {
+        expect(box.width, `${group} ${index}: width`).toBeGreaterThanOrEqual(44);
+        expect(box.height, `${group} ${index}: height`).toBeGreaterThanOrEqual(44);
+        const next = boxes[index + 1];
+        if (next) expect(box.right, `${group} ${index}: overlaps its neighbour`).toBeLessThanOrEqual(next.left);
+      }
+    }
+  };
+  // With the reset button switched off, and switched on.
+  await measure();
+  await page.getByRole('button', { name: 'Miesiąc', exact: true }).click();
+  await expect(named(page, 'Resetuj')).toBeEnabled();
+  await measure();
+  await named(page, 'Resetuj').tap();
+  await expect(named(page, 'Resetuj')).toBeDisabled();
+  await expect(panel(page)).toBeVisible();
+});
+
+test.describe('a wide window with touch input', () => {
+  test.use({ hasTouch: true, viewport: { width: 1280, height: 800 } });
+
+  test('has header buttons of the touch size that keep their labels (004 FR-007)', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one wide window is enough');
+    await openPanel(page);
+    await expect(rows(page)).toHaveCount(3);
+    test.skip(
+      !(await page.evaluate(() => matchMedia('(pointer: coarse)').matches)),
+      'this browser does not report a coarse pointer for an emulated touch screen',
+    );
+    for (const button of await page.locator('.wt-header button').all()) {
+      const box = await button.boundingBox();
+      expect(box && box.width >= 44 && box.height >= 44).toBe(true);
+    }
+    for (const name of ['Odśwież', 'Resetuj']) {
+      const label = await named(page, name).locator('span').boundingBox();
+      expect(label && label.width).toBeGreaterThan(30);
+    }
+  });
+});

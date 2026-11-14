@@ -542,7 +542,8 @@ FR-032), and FR-013 for what the name field holds on opening (also behind FR-036
   plugin to the signed-in user, together with the return to today (001 FR-049); the launcher
   then shows the signed-in user's total for today (FR-041 until it has loaded). Minimising
   (minimise button, launcher, Escape) MUST keep the chosen person, as it keeps the period
-  (001 FR-064, FR-086).
+  (001 FR-064, FR-086). Since 004 the choice ends with the reset button "Resetuj" as well,
+  in the same way and with the panel open (004 FR-010, FR-012).
 - **FR-032**: The choice of another person MUST NOT be remembered between page loads: after
   a reload of the page, a closed tab, or a new start of the browser, the plugin starts on
   the signed-in user. It is not shared between tabs. The other settings (refresh interval,
@@ -559,6 +560,7 @@ FR-032), and FR-013 for what the name field holds on opening (also behind FR-036
   | P | "Zapisz" with "Obecny użytkownik" | signed-in user | FR-003, FR-004; P stays remembered |
   | P | minimise (button, launcher, Escape) | P | nothing is forgotten |
   | P | close button | signed-in user | with the return to today; FR-003, FR-041 |
+  | P | "Resetuj" (004) | signed-in user | with the return to today; the panel stays open; 004 FR-010, FR-012 |
   | any | "Anuluj", Escape in the settings, the list, the alert, a check that could not be made | unchanged | nothing is saved |
   | any | page reload, new tab, browser start | signed-in user | the choice is not stored |
 

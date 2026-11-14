@@ -65,6 +65,20 @@ describe('Polish texts', () => {
     expect(texts.filter((text) => !module.includes(`'${text}'`))).toEqual([]);
   });
 
+  it('contain every text of spec 004 (FR-021)', () => {
+    const contract = read('specs/004-reset-button-toolbar/contracts/ui.md');
+    const start = contract.indexOf('## Texts');
+    const table = contract.slice(start, contract.indexOf('\n## ', start + 1));
+    const texts = table
+      .split('\n')
+      .filter((line) => line.trim().startsWith('|') && !line.includes('| Element') && !line.includes('|---'))
+      .flatMap((line) => [...(line.split('|')[2] ?? '').matchAll(/`([^`]+)`/g)].map((match) => match[1] ?? ''));
+    expect(texts).toEqual(['Resetuj']);
+
+    const module = read('src/i18n/pl.ts');
+    expect(texts.filter((text) => !module.includes(`'${text}'`))).toEqual([]);
+  });
+
   it('live only in src/i18n/pl.ts', () => {
     const offenders = sourceFiles(join(root, 'src'))
       .filter((path) => !path.endsWith(join('i18n', 'pl.ts')))

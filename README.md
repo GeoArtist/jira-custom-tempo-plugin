@@ -58,7 +58,8 @@ the views; the round arrows beside the rows move to the previous and next month.
 - **Panel**: any single day ("Dzień:"), the buttons "Dzień", "Tydzień", "Miesiąc", "Rok" for
   the current day, week, month, and year, round arrow buttons at both sides that move to the
   previous and next one, and a custom range with date and time. The table sorts by any column. Minimising the panel with the launcher or the minimise button keeps the
-  selected period; the close button starts again on today. The panel hangs on the launcher:
+  selected period; the close button starts again on today, and so does "Resetuj" without
+  closing the panel. The panel hangs on the launcher:
   above it, or below it when the launcher is near the top. Drag its edges or its corner to set
   its height and width.
 - **Chart**: a period longer than one day shows one bar per day (up to 31 days), per month,
@@ -66,10 +67,23 @@ the views; the round arrows beside the rows move to the previous and next month.
   its date and total. Zoom in with the buttons, the plus key, or Ctrl and the mouse wheel to
   see single days. Click a bar to see only its month or day; that uses the data already
   loaded and does not ask Jira again.
+- **Header in two rows**: the top row has the name, the title with the total, and the two
+  window buttons at the right, minimise and close. Under it a toolbar holds "Cofnij",
+  "Ponów", "Odśwież", "Resetuj", and the settings, in the middle. The layout is the same on
+  a phone; there "Odśwież" and "Resetuj" show their signs only. The panel is at least 592 px
+  high where the window has room for it.
+- **Total row**: at the foot of the panel, the name of the add-on with its version at the
+  left ("Jira Custom Tempo - 0.5.0"), "Eksport" in the middle while the table has rows, and
+  the total at the right. On a phone "Eksport" stands at the left and the name on a line
+  below.
 - **Back and forward**: "Cofnij" and "Ponów" beside "Odśwież" return to the views you were
   on, up to 10 steps back, without asking Jira again.
 - **Refresh**: "Odśwież" reloads the data. Auto-refresh runs every 5 minutes by default.
-- **Export**: "Eksport" at the left of the total row saves the table on screen as a file.
+- **Reset**: "Resetuj" (the house) goes back to today and to your own time and forgets the
+  steps of "Cofnij" and "Ponów", as the close button does, but the panel stays open. The
+  settings, the size of the panel, the place of the launcher, and the sort order stay as
+  they are. The button is switched off while there is nothing to reset.
+- **Export**: "Eksport" in the middle of the total row saves the table on screen as a file.
   "*.csv" is a header and one line per ticket, separated by semicolons, which Excel with
   Polish settings opens by itself. "*.xlsx" is a formatted sheet: the name, the period, and
   the total above the table, the columns and colours of the panel, borders, a total row,
@@ -83,8 +97,8 @@ the views; the round arrows beside the rows move to the previous and next month.
   and last name, and press "Zapisz". The name is checked in Jira first: a name nobody has
   gives an alert and saves nothing; a name several people fit (or a surname alone) gives a
   list to pick from. The panel then shows that person's time, with their name above the
-  title and on the launcher. Minimising keeps the person; the close button, a reload of
-  the page, and a new tab return to you. The last person you looked at is offered again
+  title and on the launcher. Minimising keeps the person; the close button, "Resetuj", a
+  reload of the page, and a new tab return to you. The last person you looked at is offered again
   the next time, so you do not type the name twice. Your own name always stands above the
   title while your own time is shown.
 
@@ -96,7 +110,7 @@ the views; the round arrows beside the rows move to the previous and next month.
 - It only reads: every request is a `GET`. It asks the browser for no permissions.
 - It draws inside its own isolated element, so it does not change Jira's look, and Jira does
   not change its look.
-- No runtime dependencies and no UI framework. The whole script is about 24 kB gzipped.
+- No runtime dependencies and no UI framework. The whole script is about 29 kB gzipped.
 - Source is TypeScript and SCSS. The toolchain is Vite+ (`vp`), which is mandatory for this
   project.
 

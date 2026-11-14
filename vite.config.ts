@@ -14,6 +14,7 @@ import { defineConfig, type Plugin } from 'vite-plus';
 
 /** The installation guide travels with the extension: every build puts it into dist/extension. */
 const GUIDE = 'BrowserInstallation.md';
+const VERSION = (JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as { version: string }).version;
 
 function copyGuide(): Plugin {
   return {
@@ -35,6 +36,9 @@ export default defineConfig(({ mode }) => {
   return {
     root: demo ? resolve('demo') : process.cwd(),
     base: './',
+    // The header names the version (004 FR-023): the one of package.json, in every build
+    // and in the tests.
+    define: { __APP_VERSION__: JSON.stringify(VERSION) },
     // Copied as-is into the extension: manifest.json and the icons.
     publicDir: demo || core ? false : resolve('extension'),
     plugins: demo || core ? [] : [copyGuide()],

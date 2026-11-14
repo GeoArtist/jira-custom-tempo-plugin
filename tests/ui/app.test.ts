@@ -4,6 +4,7 @@ import { SETTINGS_KEY, type SettingsStorage } from '../../src/domain/settings';
 import { mountApp, type App } from '../../src/ui/app';
 import type { Timers } from '../../src/ui/controller';
 import { FakeGateway, FIXTURE_NOW, flush, SEARCH, todayRoutes, type FakeReply } from '../fake-gateway';
+import packageJson from '../../package.json';
 import empty from '../fixtures/search-empty.json';
 import search from '../fixtures/search-today.json';
 
@@ -720,30 +721,30 @@ describe('panel height', () => {
     const saved = await mountOpen(new FakeGateway(todayRoutes()), {
       refreshMinutes: 5,
       theme: 'dark',
-      panelHeight: 600,
+      panelHeight: 800,
       panelWidth: null,
       launcher: null,
       lastPerson: null,
     });
-    expect(height(saved.root)).toBe('600px');
+    expect(height(saved.root)).toBe('800px');
   });
 
   it('changes with the arrow keys, never below the minimum, and is remembered', async () => {
     const { root, storage } = await mountOpen(new FakeGateway(todayRoutes()), {
       refreshMinutes: 10,
       theme: 'light',
-      panelHeight: 600,
+      panelHeight: 800,
       panelWidth: null,
       launcher: null,
       lastPerson: null,
     });
     // The test page has no layout, so the height the handle reads is the saved one.
     handle(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
-    expect(height(root)).toBe('616px');
+    expect(height(root)).toBe('816px');
     expect(stored(storage)).toEqual({
       refreshMinutes: 10,
       theme: 'light',
-      panelHeight: 616,
+      panelHeight: 816,
       panelWidth: null,
       launcher: null,
       lastPerson: null,
@@ -752,15 +753,15 @@ describe('panel height', () => {
     for (let press = 0; press < 30; press += 1) {
       handle(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     }
-    expect(height(root)).toBe('440px');
-    expect(stored(storage).panelHeight).toBe(440);
+    expect(height(root)).toBe('592px');
+    expect(stored(storage).panelHeight).toBe(592);
   });
 
   it('goes back to the default with Home or a double click', async () => {
     const { root, storage } = await mountOpen(new FakeGateway(todayRoutes()), {
       refreshMinutes: 5,
       theme: 'dark',
-      panelHeight: 600,
+      panelHeight: 800,
       panelWidth: null,
       launcher: null,
       lastPerson: null,
@@ -774,7 +775,7 @@ describe('panel height', () => {
     const { root, storage } = await mountOpen(new FakeGateway(todayRoutes()), {
       refreshMinutes: 5,
       theme: 'dark',
-      panelHeight: 600,
+      panelHeight: 800,
       panelWidth: null,
       launcher: null,
       lastPerson: null,
@@ -785,7 +786,7 @@ describe('panel height', () => {
     expect(stored(storage)).toEqual({
       refreshMinutes: 5,
       theme: 'dark',
-      panelHeight: 616,
+      panelHeight: 816,
       panelWidth: null,
       launcher: null,
       lastPerson: null,
@@ -803,7 +804,7 @@ describe('panel width', () => {
   const saved = {
     refreshMinutes: 5,
     theme: 'dark',
-    panelHeight: 600,
+    panelHeight: 800,
     panelWidth: 700,
     launcher: null,
     lastPerson: null,
@@ -827,7 +828,7 @@ describe('panel width', () => {
     expect(stored(storage)).toEqual({ ...saved, panelWidth: 716 });
     // The width grip does not answer to the keys of the height.
     press(handle(root, 'inline'), 'ArrowUp');
-    expect(size(root, 'height')).toBe('600px');
+    expect(size(root, 'height')).toBe('800px');
 
     for (let count = 0; count < 20; count += 1) press(handle(root, 'inline'), 'ArrowRight');
     expect(size(root, 'width')).toBe('640px');
@@ -838,7 +839,7 @@ describe('panel width', () => {
     const { root, storage } = await mountOpen(new FakeGateway(todayRoutes()), saved);
     press(handle(root, 'corner'), 'ArrowLeft');
     press(handle(root, 'corner'), 'ArrowUp');
-    expect(stored(storage)).toEqual({ ...saved, panelWidth: 716, panelHeight: 616 });
+    expect(stored(storage)).toEqual({ ...saved, panelWidth: 716, panelHeight: 816 });
     press(handle(root, 'corner'), 'Home');
     expect(size(root, 'width')).toBe('');
     expect(size(root, 'height')).toBe('');
@@ -970,5 +971,91 @@ describe('appearance', () => {
     expect(app.isOpen()).toBe(true);
     root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(app.isOpen()).toBe(false);
+  });
+});
+
+describe('the place of the settings (004 FR-005)', () => {
+  const popover = (root: Element) => root.querySelector<HTMLElement>('.wt-popover') as HTMLElement;
+  const top = (root: Element) => popover(root).style.getPropertyValue('--wt-popover-top');
+  /** The test page has no layout: the header is given a height to measure. */
+  const setHeaderHeight = (root: Element, value: number) =>
+    Object.defineProperty(root.querySelector('.wt-header'), 'offsetHeight', { value, configurable: true });
+
+  it('is directly under the header, measured when they open', async () => {
+    const { root } = await mountOpen(new FakeGateway(todayRoutes()));
+    setHeaderHeight(root, 120);
+    byLabel(root, 'Ustawienia')?.click();
+    expect(popover(root).hidden).toBe(false);
+    expect(top(root)).toBe('120px');
+  });
+
+  it('follows the header while they are open: after a resize of the window and after a load', async () => {
+    const gateway = new FakeGateway(todayRoutes());
+    const { root, timer } = await mountOpen(gateway);
+    setHeaderHeight(root, 120);
+    byLabel(root, 'Ustawienia')?.click();
+
+    setHeaderHeight(root, 150);
+    window.dispatchEvent(new Event('resize'));
+    expect(top(root)).toBe('150px');
+
+    // An automatic refresh ends: the title may wrap differently with the new total.
+    setHeaderHeight(root, 170);
+    timer.fireAll();
+    await flush(80);
+    expect(top(root)).toBe('170px');
+
+    // A load that failed changes the title as well.
+    gateway.add({ path: SEARCH, reply: { status: 500 } });
+    setHeaderHeight(root, 190);
+    timer.fireAll();
+    await flush(80);
+    expect(top(root)).toBe('190px');
+  });
+
+  it('is not touched while the settings are closed', async () => {
+    const { root, timer } = await mountOpen(new FakeGateway(todayRoutes()));
+    setHeaderHeight(root, 120);
+    window.dispatchEvent(new Event('resize'));
+    timer.fireAll();
+    await flush(80);
+    expect(top(root)).toBe('');
+  });
+
+  it('keeps the value of the stylesheet on a page that cannot be measured', async () => {
+    const { root } = await mountOpen(new FakeGateway(todayRoutes()));
+    byLabel(root, 'Ustawienia')?.click();
+    expect(popover(root).hidden).toBe(false);
+    expect(top(root)).toBe('');
+  });
+});
+
+describe('the name of the add-on (004 FR-023)', () => {
+  it('stands at the left of the total row, with the version of the package', async () => {
+    const { root } = await mountOpen(new FakeGateway(todayRoutes()));
+    const footer = root.querySelector('.wt-footer') as HTMLElement;
+    // Three parts: the name, the export control, the total (004 FR-025).
+    expect([...footer.children].map((child) => child.className)).toEqual(['wt-app', 'wt-export', 'wt-footer__total']);
+    const app = footer.querySelector('.wt-app') as HTMLElement;
+    expect(app.tagName).toBe('P');
+    expect(packageJson.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(app.textContent).toBe(`Jira Custom Tempo - ${packageJson.version}`);
+    // Once in the panel, and not in the header.
+    expect(root.querySelectorAll('.wt-app')).toHaveLength(1);
+    expect(root.querySelector('.wt-header .wt-app')).toBeNull();
+    // The panel itself carries the name without the version.
+    expect(root.querySelector('.wt-panel')?.getAttribute('aria-label')).toBe('Jira Custom Tempo');
+    // The label and the value of the total keep their order inside their part.
+    const total = footer.querySelector('.wt-footer__total') as HTMLElement;
+    expect([...total.children].map((child) => child.className)).toEqual([
+      'wt-footer__label',
+      'wt-footer__value wt-total',
+    ]);
+  });
+
+  it('is there also while the table has nothing to show', async () => {
+    const gateway = new FakeGateway(todayRoutes()).add({ path: SEARCH, reply: { json: empty } });
+    const { root } = await mountOpen(gateway);
+    expect(text(root, '.wt-footer .wt-app')).toBe(`Jira Custom Tempo - ${packageJson.version}`);
   });
 });

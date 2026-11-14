@@ -35,7 +35,9 @@ export interface LauncherPosition {
 export const SETTINGS_KEY = 'worktime.settings.v1';
 export const MAX_REFRESH_MINUTES = 1440;
 /** The lowest panel that still shows one table row; the stylesheet has the same value. */
-export const MIN_PANEL_HEIGHT = 440;
+export const MIN_PANEL_HEIGHT = 592;
+/** The lowest height before the header had two rows (004 FR-008). */
+const LEGACY_MIN_PANEL_HEIGHT = 440;
 export const MAX_PANEL_HEIGHT = 4000;
 /** The narrowest panel whose table shows numbers, times, and sums on one line each. */
 export const MIN_PANEL_WIDTH = 640;
@@ -68,6 +70,20 @@ export function isValidPanelWidth(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= MIN_PANEL_WIDTH && value <= MAX_PANEL_WIDTH;
 }
 
+/**
+ * A height chosen while the panel could be lower is read as the lowest height of today, so
+ * the user keeps a low panel after the update (004 FR-008). Reading stores nothing.
+ */
+function readPanelHeight(value: unknown): number | null {
+  if (isValidPanelHeight(value)) return value;
+  const legacy =
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= LEGACY_MIN_PANEL_HEIGHT &&
+    value < MIN_PANEL_HEIGHT;
+  return legacy ? MIN_PANEL_HEIGHT : DEFAULT_SETTINGS.panelHeight;
+}
+
 const isOffset = (value: unknown): value is number =>
   typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= MAX_LAUNCHER_OFFSET;
 
@@ -95,7 +111,7 @@ export function readSettings(storage: SettingsStorage | null): UserSettings {
     return {
       refreshMinutes: isValidInterval(refreshMinutes) ? refreshMinutes : DEFAULT_SETTINGS.refreshMinutes,
       theme: theme === 'dark' || theme === 'light' ? theme : DEFAULT_SETTINGS.theme,
-      panelHeight: isValidPanelHeight(panelHeight) ? panelHeight : DEFAULT_SETTINGS.panelHeight,
+      panelHeight: readPanelHeight(panelHeight),
       panelWidth: isValidPanelWidth(panelWidth) ? panelWidth : DEFAULT_SETTINGS.panelWidth,
       launcher: isValidLauncherPosition(launcher)
         ? { right: launcher.right, bottom: launcher.bottom }

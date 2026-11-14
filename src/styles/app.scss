@@ -257,39 +257,46 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
 
 // ---------------------------------------------------------------- header
 
+// Two rows at every width (004 FR-001): the title row and, under it, the toolbar.
 .wt-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wt-space-3);
+  flex-direction: column;
+  gap: var(--wt-space-2);
   padding: var(--wt-space-4) var(--wt-space-5) var(--wt-space-2);
 
   @media (max-width: $narrow) {
-    // Five buttons leave no room for the title beside them: it gets a line of its own.
-    flex-wrap: wrap;
     padding: var(--wt-space-3) var(--wt-space-3) var(--wt-space-2);
   }
 }
 
+// The title row: the name and the title take the room that is left; the two window buttons
+// keep their place at the top right, whatever the title needs (004 FR-003).
+.wt-header__bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wt-space-3);
+}
+
 .wt-header__text {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
-.wt-header__actions {
+.wt-header__window {
   display: flex;
   flex: none;
   gap: var(--wt-space-2);
-  margin-left: auto;
+}
 
-  @media (max-width: $narrow) {
-    // Six buttons of the touch size, with the usual gap, are wider than the narrowest panel:
-    // the last one was cut by its edge. They take a line of their own, reach a little into
-    // the padding at both sides, and share out what room there is.
-    flex: 1 1 100%;
-    justify-content: space-between;
-    gap: var(--wt-space-1);
-    margin-inline: calc(-1 * var(--wt-space-1));
-  }
+// The toolbar: its buttons stand together in the middle, like the rows of the period box
+// below (004 FR-004). Five buttons of the touch size fit the narrowest panel on one line.
+.wt-header__tools {
+  display: flex;
+  justify-content: center;
+  gap: var(--wt-space-2);
+  // Clear of the title above (004 FR-024).
+  margin-block-start: calc(var(--wt-space-4) * 2);
 }
 
 // Whose time is shown: a line of its own above the title (002 FR-006). It keeps its height
@@ -315,7 +322,7 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
 
 @media (max-width: $narrow) {
   // The icon alone is enough on a phone; the label stays for screen readers.
-  .wt-header__actions .wt-button:not(.wt-button--icon) span {
+  .wt-header__tools .wt-button:not(.wt-button--icon) span {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -324,7 +331,7 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
     white-space: nowrap;
   }
 
-  .wt-header__actions .wt-button:not(.wt-button--icon) {
+  .wt-header__tools .wt-button:not(.wt-button--icon) {
     padding: 0;
   }
 }
@@ -502,6 +509,8 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
 // The bar with its scale stands in the middle between the period box and the table: the
 // same space above and below, and nothing written under it (FR-020, FR-066).
 .wt-progress {
+  // More room above and below, the same at both sides (004 FR-024).
+  margin-block: var(--wt-space-4);
   padding: calc(var(--wt-space-3) * 2) var(--wt-space-5);
 
   @media (max-width: $narrow) {
@@ -1104,14 +1113,16 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   }
 }
 
+// Three parts in one row: the name of the add-on at the left edge, the export control in
+// the middle, and the total at the right edge (004 FR-023, FR-025).
 .wt-footer {
-  display: flex;
+  display: grid;
+  // The side columns are equal, so the control stands in the middle of the row; a part
+  // that needs more than its half takes it from the middle.
+  grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);
   // The parts stand on the first line of the row. When the message of the export control
   // wraps under its button and the row grows, the total stays where it was (003 FR-009).
-  align-items: flex-start;
-  // Label and value sit together at the right edge, in one colour (FR-062); the export
-  // control takes the left edge (003 FR-001).
-  justify-content: flex-end;
+  align-items: start;
   gap: var(--wt-space-2);
   // As high as with the export button, also while there is none: the row does not jump.
   min-height: calc(var(--wt-control) + 2 * var(--wt-space-2) + var(--wt-line));
@@ -1124,13 +1135,25 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   }
 
   @media (max-width: $narrow) {
+    // No room for three parts side by side: the control keeps the left edge and the total
+    // the right one (003 FR-001), and the name of the add-on has the line below, at the
+    // bottom left of the panel.
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: var(--wt-space-2) var(--wt-space-3);
   }
 }
 
+// Label and value sit together at the right edge, in one colour (FR-062).
+.wt-footer__total {
+  display: flex;
+  gap: var(--wt-space-2);
+  justify-self: end;
+}
+
 // As high as a control, with the text at mid-height: level with the export button beside.
 .wt-footer__label,
-.wt-footer__value {
+.wt-footer__value,
+.wt-app {
   display: inline-flex;
   align-items: center;
   min-height: var(--wt-control);
@@ -1140,19 +1163,50 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   }
 }
 
+// The name of the add-on and its version: the smallest text, quiet, at the bottom left of the panel
+// (004 FR-023). It gives way to the other two parts of the row.
+.wt-app {
+  display: block;
+  overflow: hidden;
+  min-width: 0;
+  color: var(--wt-text-muted);
+  font-size: var(--wt-text-xs);
+  font-style: italic;
+  font-weight: var(--wt-weight-normal);
+  line-height: var(--wt-control);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @include base.touch-size {
+    line-height: var(--wt-touch);
+  }
+
+  @media (max-width: $narrow) {
+    grid-area: 2 / 1 / 3 / 3;
+    min-height: 0;
+    line-height: 1.4;
+  }
+}
+
 // ---------------------------------------------------------------- export (003)
 
-// The left group of the total row: the button, its menu, and the message that a file could
-// not be made. It takes the room the total leaves, so the message wraps under the button
-// when it does not fit beside it (003 FR-009).
+// The middle group of the total row: the button, its menu, and the message that a file
+// could not be made (004 FR-025). The message wraps under the button when it does not fit
+// beside it (003 FR-009).
 .wt-export {
   display: flex;
-  flex: 1 1 0;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: var(--wt-space-1) var(--wt-space-2);
   min-width: 0;
   font-weight: var(--wt-weight-normal);
+
+  @media (max-width: $narrow) {
+    // At the left edge, in the first of two columns.
+    grid-area: 1 / 1;
+    justify-content: flex-start;
+  }
 }
 
 .wt-export__button {
@@ -1248,16 +1302,21 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
 
 // ---------------------------------------------------------------- settings
 
+// The settings stand under the toolbar, in the middle like the toolbar itself. Script sets
+// the top from the height of the header, which grows with a title that wraps (004 FR-005);
+// these numbers are the header with a title of one line, for a page that cannot be measured.
 .wt-popover {
-  --wt-popover-top: 60px;
+  --wt-popover-top: 136px;
 
   position: absolute;
   top: var(--wt-popover-top);
-  right: var(--wt-space-4);
+  right: 0;
+  left: 0;
   z-index: 2;
   display: flex;
   flex-direction: column;
   width: min(320px, calc(100% - 2 * var(--wt-space-4)));
+  margin-inline: auto;
   // Never taller than the room the panel has under the header: with a list of people the
   // list gives way first, then the settings scroll, and the buttons stay in view (002 FR-044).
   max-height: calc(100cqh - var(--wt-popover-top) - var(--wt-space-2));
@@ -1268,11 +1327,12 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   box-shadow: var(--wt-shadow);
 
   @media (max-width: $narrow) {
-    --wt-popover-top: 64px;
+    --wt-popover-top: 144px;
 
     right: var(--wt-space-2);
     left: var(--wt-space-2);
     width: auto;
+    margin-inline: 0;
   }
 }
 
@@ -1421,7 +1481,7 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
 
 // The refresh button during a load is switched off in the same way (003 FR-030). It keeps
 // the pointer it always had then; a click on it does nothing.
-.wt-header__actions .wt-button[aria-disabled='true'] {
+.wt-header__tools .wt-button[aria-disabled='true'] {
   cursor: progress;
   pointer-events: auto;
 }

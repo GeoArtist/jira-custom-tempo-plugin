@@ -115,7 +115,7 @@ test('minimising keeps the period; the close button starts again on today', asyn
   await launcher(page).click();
   await expect(chip(page, 'Dzień')).toHaveAttribute('aria-pressed', 'true');
 
-  // The minimise button of the header, between settings and close, does the same.
+  // The minimise button stands before the close button, in the title row; it does the same.
   const minimise = page.getByRole('button', { name: 'Minimalizuj' });
   const [gear, own, cross] = await Promise.all(
     [page.getByRole('button', { name: 'Ustawienia' }), minimise, page.getByRole('button', { name: 'Zamknij' })].map(
@@ -123,8 +123,10 @@ test('minimising keeps the period; the close button starts again on today', asyn
     ),
   );
   if (!gear || !own || !cross) throw new Error('not rendered');
-  expect(own.x).toBeGreaterThan(gear.x);
-  expect(own.x).toBeLessThan(cross.x);
+  expect(own.x + own.width).toBeLessThanOrEqual(cross.x);
+  expect(Math.abs(own.y - cross.y)).toBeLessThan(1);
+  // The settings button is in the toolbar, the row below (004 FR-004).
+  expect(gear.y).toBeGreaterThanOrEqual(own.y + own.height);
   await minimise.click();
   await expect(panel(page)).toBeHidden();
   await expect(launcher(page)).toBeFocused();
@@ -338,12 +340,12 @@ test('the user sets the height of the panel by dragging its top edge, and it is 
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name === 'phone', 'on a phone the window is lower than the lowest panel');
-  await page.setViewportSize({ width: 1280, height: 1000 });
+  await page.setViewportSize({ width: 1280, height: 1400 });
   await openPanel(page);
   await expect(rows(page)).toHaveCount(3);
   const height = async () => Math.round((await panel(page).boundingBox())?.height ?? 0);
   // The default is half of the window.
-  expect(await height()).toBe(500);
+  expect(await height()).toBe(700);
 
   const drag = async (by: number) => {
     const grip = await page.locator('.wt-resize--block').boundingBox();
@@ -357,11 +359,11 @@ test('the user sets the height of the panel by dragging its top edge, and it is 
   };
 
   await drag(200);
-  expect(await height()).toBe(700);
+  expect(await height()).toBe(900);
 
   // Far down: the panel stops at its lowest height, where one whole row is still visible.
   await drag(-600);
-  expect(await height()).toBe(440);
+  expect(await height()).toBe(592);
   const area = await page.locator('.wt-table-scroll').boundingBox();
   const head = await page.locator('.wt-table thead').boundingBox();
   if (!area || !head) throw new Error('not rendered');
@@ -369,29 +371,29 @@ test('the user sets the height of the panel by dragging its top edge, and it is 
   expect(area.y + area.height - (head.y + head.height)).toBeGreaterThanOrEqual(46);
 
   await drag(160);
-  expect(await height()).toBe(600);
+  expect(await height()).toBe(752);
   await page.reload();
   await launcher(page).click();
-  expect(await height()).toBe(600);
+  expect(await height()).toBe(752);
 
   // A double click on the edge goes back to the default.
   await page.locator('.wt-resize--block').dblclick();
-  expect(await height()).toBe(500);
+  expect(await height()).toBe(700);
   await page.reload();
   await launcher(page).click();
-  expect(await height()).toBe(500);
+  expect(await height()).toBe(700);
 });
 
 test('the user sets the width at the side edge and both dimensions at the corner', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'phone', 'on a phone the panel takes the whole width');
-  await page.setViewportSize({ width: 1280, height: 1000 });
+  await page.setViewportSize({ width: 1280, height: 1400 });
   await openPanel(page);
   await expect(rows(page)).toHaveCount(3);
   const size = async () => {
     const box = await panel(page).boundingBox();
     return [Math.round(box?.width ?? 0), Math.round(box?.height ?? 0)];
   };
-  expect(await size()).toEqual([800, 500]);
+  expect(await size()).toEqual([800, 700]);
 
   const drag = async (kind: string, dx: number, dy: number) => {
     const grip = await page.locator(`.wt-resize--${kind}`).boundingBox();
@@ -407,7 +409,7 @@ test('the user sets the width at the side edge and both dimensions at the corner
 
   // The free edges are the left and the top: the panel hangs on the launcher at its right.
   await drag('inline', -100, 0);
-  expect(await size()).toEqual([900, 500]);
+  expect(await size()).toEqual([900, 700]);
   const right = async () => {
     const box = await panel(page).boundingBox();
     return Math.round((box?.x ?? 0) + (box?.width ?? 0));
@@ -416,7 +418,7 @@ test('the user sets the width at the side edge and both dimensions at the corner
 
   // Far to the right: the panel stops at its narrowest, where the table still reads well.
   await drag('inline', 700, 0);
-  expect(await size()).toEqual([640, 500]);
+  expect(await size()).toEqual([640, 700]);
   for (const cell of ['.wt-col-key', '.wt-col-sum', '.wt-entries li']) {
     const node = page.locator(`.wt-table tbody ${cell}`).first();
     expect(await node.evaluate((n) => getComputedStyle(n).whiteSpace)).toBe('nowrap');
@@ -429,18 +431,18 @@ test('the user sets the width at the side edge and both dimensions at the corner
   }
 
   await drag('corner', -160, -100);
-  expect(await size()).toEqual([800, 600]);
+  expect(await size()).toEqual([800, 800]);
   await page.reload();
   await launcher(page).click();
-  expect(await size()).toEqual([800, 600]);
+  expect(await size()).toEqual([800, 800]);
 
   await page.locator('.wt-resize--inline').focus();
   await page.keyboard.press('ArrowLeft');
-  expect(await size()).toEqual([816, 600]);
+  expect(await size()).toEqual([816, 800]);
 
   // A double click on the corner goes back to the default size.
   await page.locator('.wt-resize--corner').dblclick();
-  expect(await size()).toEqual([800, 500]);
+  expect(await size()).toEqual([800, 700]);
 });
 
 test('the panel hangs on the launcher, which the user drags anywhere in the window', async ({ page }, testInfo) => {
@@ -663,9 +665,11 @@ test('every header button is whole inside the panel, also in the narrowest windo
   await openPanel(page);
   const box = await panel(page).boundingBox();
   if (!box) throw new Error('not rendered');
-  const buttons = page.locator('.wt-header__actions button');
-  await expect(buttons).toHaveCount(6);
-  for (const button of await buttons.all()) {
+  const windowButtons = page.locator('.wt-header__window button');
+  const tools = page.locator('.wt-header__tools button');
+  await expect(windowButtons).toHaveCount(2);
+  await expect(tools).toHaveCount(5);
+  for (const button of [...(await windowButtons.all()), ...(await tools.all())]) {
     const b = await button.boundingBox();
     const name = (await button.getAttribute('aria-label')) ?? (await button.textContent());
     if (!b) throw new Error(`${name} is not laid out`);
@@ -673,9 +677,19 @@ test('every header button is whole inside the panel, also in the narrowest windo
     expect(b.x, `${name}: left edge`).toBeGreaterThanOrEqual(box.x);
     expect(b.x + b.width, `${name}: right edge`).toBeLessThanOrEqual(box.x + box.width);
   }
-  // One row: the six buttons stand side by side.
-  const tops = await buttons.evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
-  expect(new Set(tops).size).toBe(1);
+  // Two rows (004 FR-001): the window buttons side by side, the toolbar side by side below.
+  const edges = (buttons: typeof tools) =>
+    buttons.evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const rect = node.getBoundingClientRect();
+        return { top: Math.round(rect.top), bottom: Math.round(rect.bottom) };
+      }),
+    );
+  const upper = await edges(windowButtons);
+  const lower = await edges(tools);
+  expect(new Set(upper.map((edge) => edge.top)).size).toBe(1);
+  expect(new Set(lower.map((edge) => edge.top)).size).toBe(1);
+  expect(lower[0]?.top).toBeGreaterThanOrEqual(upper[0]?.bottom ?? Infinity);
 });
 
 // ---------------------------------------------------------------- the time of another person (spec 002)
@@ -829,11 +843,12 @@ test('the export menu fits into the lowest panel and into a panel below the laun
     lastPerson: null,
   };
 
-  // The lowest panel.
+  // The lowest panel. A height stored before the header had two rows is read as the new
+  // lowest one (004 FR-008).
   await store({ ...base, panelHeight: 440 });
   await openPanel(page);
   await expect(exportButton(page)).toBeVisible();
-  expect(Math.round((await panel(page).boundingBox())?.height ?? 0)).toBe(440);
+  expect(Math.round((await panel(page).boundingBox())?.height ?? 0)).toBe(592);
   await expectMenuInPlace(page);
 
   // The launcher near the top of the window: the panel hangs below it.

@@ -197,15 +197,15 @@ describe('export control in the total row', () => {
   const exported = (onExport: ReturnType<typeof vi.fn>, call: number) =>
     onExport.mock.calls[call] as unknown as [string, ShownView];
 
-  it('stands in the total row before the total, in every state', () => {
+  it('stands in the total row between the name of the add-on and the total, in every state', () => {
     const { table, root } = build();
     const footer = root.querySelector('.wt-footer') as HTMLElement;
     const place = () => [...footer.children].map((child) => child.className.split(' ')[0]);
-    expect(place()).toEqual(['wt-export', 'wt-footer__label', 'wt-footer__value']);
+    expect(place()).toEqual(['wt-app', 'wt-export', 'wt-footer__total']);
     table.render(todayRows, today, TZ, summary);
     table.showLoading();
     table.clear();
-    expect(place()).toEqual(['wt-export', 'wt-footer__label', 'wt-footer__value']);
+    expect(place()).toEqual(['wt-app', 'wt-export', 'wt-footer__total']);
   });
 
   it('is there only while the table shows rows', () => {

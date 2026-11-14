@@ -15,6 +15,12 @@ It changes no requirement of 001 or 002; it adds a control to the total row of 0
 One line of the UI contract of 001 is narrowed by FR-030: "Odśwież" is still switched off
 while a load runs, but it can hold the keyboard focus.
 
+**Amended by 004-reset-button-toolbar (2026-11-14)**: FR-001 puts the control at the left
+edge of the total row. In a window wider than 600 px it now stands in the middle of that
+row, between the name of the plugin, which 004 adds at the left edge, and the total
+([spec 004](../004-reset-button-toolbar/spec.md), FR-023, FR-025). In a window 600 px wide
+or narrower it keeps the left edge. Everything else about the control is unchanged.
+
 ## Clarifications
 
 ### Session 2026-11-13

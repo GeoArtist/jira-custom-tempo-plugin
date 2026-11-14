@@ -22,7 +22,9 @@ interface View {
   rows: TicketRow[] | null;
 }
 
-const samePeriod = (a: Period, b: Period): boolean => JSON.stringify([a.from, a.to]) === JSON.stringify([b.from, b.to]);
+/** The same dates and times; the name of the preset does not count. */
+export const samePeriod = (a: Period, b: Period): boolean =>
+  JSON.stringify([a.from, a.to]) === JSON.stringify([b.from, b.to]);
 
 /** The timer functions the controller needs; injectable for tests. */
 export interface Timers {
@@ -206,6 +208,22 @@ export class Controller {
 
   private showHistory(): void {
     this.options.header.setHistory(this.position > 0, this.position < this.history.length - 1);
+    this.showReset();
+  }
+
+  /**
+   * Whether the view differs from the one a newly loaded page starts on: another period,
+   * another person, or a step to go back or forward to (004 FR-015). The dates are compared,
+   * not the name of the preset: after midnight a period is still called today and is not.
+   */
+  private canReset(): boolean {
+    const { session } = this.options;
+    const today = presetPeriod('today', session.timeZone, this.now());
+    return !samePeriod(this.period, today) || this.person.accountId !== session.accountId || this.history.length > 1;
+  }
+
+  private showReset(): void {
+    this.options.header.setResettable(this.canReset());
   }
 
   /**
@@ -300,6 +318,8 @@ export class Controller {
 
     this.cancelTimer();
     this.state = 'loading';
+    // The calendar may have moved on since the view last changed (004 FR-015).
+    this.showReset();
     header.setBusy(true);
     periodBar.update(period);
     // The rows on screen belong to another period: name the new one, its total is not known yet.

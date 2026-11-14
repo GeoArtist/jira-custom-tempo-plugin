@@ -30,9 +30,12 @@ Icon: `extension/icons/icon-16.png`, `icon-32.png`, `icon-48.png`, `icon-128.png
 0. Grips on the panel's free edges, the ones away from the launcher (by default the top and
    the left): drag the top edge to set the height (FR-059), the side edge to set the width,
    the corner to set both (FR-071).
-1. Header: title line and the buttons back, forward (curved arrows, FR-082), "Odśwież",
-   settings (gear), minimise (a line at the foot of the button, FR-086), close. No subtitle (FR-070). At 600 px and narrower the buttons stand on
-   a line of their own under the title, at the right.
+1. Header, in two rows at every width (changed by 004; the markup, the sizes, and the
+   behaviour are in [the UI contract of 004](../../004-reset-button-toolbar/contracts/ui.md)).
+   The title row: the title line at the left and, at the right, minimise (a line at the foot
+   of the button, FR-086) and close. The toolbar, centred, 32 px lower than the usual gap:
+   back, forward (curved arrows, FR-082), "Odśwież", "Resetuj" (a house), settings
+   (gear). No subtitle (FR-070).
 2. Period box, one light frame (FR-055, FR-084). Left of the rows the previous-period button,
    right of them the next-period button: circles of one control (32 px; 44 px on touch)
    with a chevron, 8 px from the widest row, each at the middle of the height of the three
@@ -50,10 +53,13 @@ Icon: `extension/icons/icon-16.png`, `icon-32.png`, `icon-48.png`, `icon-128.png
    For a period longer than one day the bar chart stands here instead (FR-076).
 4. Table: "Zgłoszenie", "Tytuł", "Czas wpisów", "Suma". Each header is a button that sorts.
 5. Total row: "Suma czasu:" and the total, together at the right edge, in one colour (FR-062).
+   Since 004 the row also has, at its left edge, the name of the plugin with its version,
+   small, grey, and slanted, and in its middle the export control of 003 (004 FR-023,
+   FR-025).
 
 The panel has the size the user chose, whatever it shows. Width: 800 px by default, never
 less than 640 px (ticket numbers, entry times, and sums stay on one line each) and never more
-than the window allows (FR-071). Height: 50svh by default, never less than 440 px (one table
+than the window allows (FR-071). Height: 50svh by default, never less than 592 px (one table
 row stays visible) and never more than the window allows (FR-059). On screens 600 px and wider
 the table area takes the height that is left: the rows scroll inside it, a short table sits at
 its top with the rest empty (FR-061), and the header, the period box, and the total row stay
@@ -96,6 +102,7 @@ in view. Below 600 px the whole panel scrolls.
 | Settings button (accessible name) | `Ustawienia` |
 | Minimise button (accessible name and tooltip) | `Minimalizuj` |
 | Close button (accessible name) | `Zamknij` |
+| Reset button (label, accessible name, tooltip; 004 FR-009) | `Resetuj` |
 | Previous / next period (accessible names) | `Poprzedni okres` / `Następny okres` |
 | Period buttons | `Dzień`, `Tydzień`, `Miesiąc`, `Rok` |
 | Day field label | `Dzień:` |
@@ -247,7 +254,7 @@ for text (the coloured totals) and are tuned per theme so that the text keeps a 
 ratio of at least 4.5:1 against `--wt-surface` (FR-048, Principle IV). Spacing, radius, type,
 and size tokens are defined once for both themes; among them `--wt-panel-width` (800 px),
 `--wt-panel-height` (50svh by default; the height grip sets it on the panel),
-`--wt-panel-min-height` (440 px), `--wt-launcher-right` (88 px), `--wt-switch-height`
+`--wt-panel-min-height` (592 px; 440 px until 004 FR-008), `--wt-launcher-right` (88 px), `--wt-switch-height`
 (32 px; 44 px on touch devices and narrow screens), and `--wt-hover`, the background of a
 control under the pointer (18% of `--wt-accent` on `--wt-surface`).
 
@@ -276,7 +283,7 @@ Sizes are in px, because `rem` would follow the Jira page's root font size.
   them both. The free edges are the ones away from the launcher (top and left by default;
   bottom when the panel is below the launcher, right when it lines up with the launcher's
   left edge); the panel carries them as `data-free-block` and `data-free-inline`. Dragging a
-  free edge outwards makes the panel larger, within 440 px by 640 px and the window. The
+  free edge outwards makes the panel larger, within 592 px by 640 px and the window. The
   arrow keys on a focused grip move its edge by 16 px; Home or a double click returns to the
   default. The size is stored when the drag ends (see
   [settings-storage.md](settings-storage.md)). Below 600 px window width only the height grip

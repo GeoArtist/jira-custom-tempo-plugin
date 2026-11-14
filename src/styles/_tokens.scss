@@ -34,7 +34,7 @@
   --wt-touch: 44px; // 44px: minimum touch target
   --wt-panel-width: 800px;
   --wt-panel-height: 50svh; // the default; the user changes it by dragging an edge (FR-059)
-  --wt-panel-min-height: 440px; // the lowest panel that still shows one table row
+  --wt-panel-min-height: 592px; // the lowest panel that still shows one table row under the header of two rows
   --wt-panel-min-width: 640px; // the narrowest panel whose table cells stay on one line
   --wt-panel-gap: 8px; // between the launcher and the panel that hangs on it
   // The launcher's default place leaves the corner itself to Jira's own floating button and

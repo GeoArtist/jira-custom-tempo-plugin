@@ -50,6 +50,9 @@ const ICON_PATHS = {
     'M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z',
     'M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.5-2.4 1a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5A7.6 7.6 0 0 0 7 6.5l-2.4-1-2 3.5 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.5 2.4-1a7.6 7.6 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.6 7.6 0 0 0 2.6-1.5l2.4 1 2-3.5z',
   ],
+  // A house, the sign of the start view: a roof, walls, and a door. It has no arrow and no
+  // curve, so it cannot be taken for refresh or undo (004 FR-009).
+  home: ['M3 11.5 12 4l9 7.5', 'M5.5 9.5V20h13V9.5', 'M10 20v-6h4v6'],
   close: ['M6 6l12 12', 'M18 6L6 18'],
   // A line at the foot of the box, as on a window's title bar.
   minimise: ['M6 18h12'],

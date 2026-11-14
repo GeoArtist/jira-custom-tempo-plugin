@@ -21,6 +21,7 @@ function build() {
     onBack: vi.fn(),
     onForward: vi.fn(),
     onRefresh: vi.fn(),
+    onReset: vi.fn(),
     onSettings: vi.fn(),
     onMinimise: vi.fn(),
     onClose: vi.fn(),
@@ -30,14 +31,24 @@ function build() {
 }
 
 const byLabel = (root: HTMLElement, label: string) => root.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`);
+/** The names of the buttons under `selector`, in document order. */
+const names = (root: HTMLElement, selector: string) =>
+  [...root.querySelectorAll(selector)].map((button) => button.getAttribute('aria-label') ?? button.textContent);
 
 describe('header', () => {
-  it('has a minimise button between settings and close', () => {
+  it('has the two window buttons in the title row', () => {
     const { header, handlers } = build();
-    const labels = [...header.element.querySelectorAll('.wt-header__actions button')].map(
-      (button) => button.getAttribute('aria-label') ?? button.textContent,
-    );
-    expect(labels.slice(-3)).toEqual(['Ustawienia', 'Minimalizuj', 'Zamknij']);
+    // Two rows: the title row and the toolbar (004 FR-001).
+    expect([...header.element.children].map((child) => child.className)).toEqual([
+      'wt-header__bar',
+      'wt-header__tools',
+    ]);
+    const bar = header.element.querySelector('.wt-header__bar') as HTMLElement;
+    expect([...bar.children].map((child) => child.className)).toEqual(['wt-header__text', 'wt-header__window']);
+    // The name of the add-on is not here: it stands in the total row (004 FR-023).
+    expect(header.element.querySelector('.wt-app')).toBeNull();
+    expect(names(header.element, '.wt-header__window button')).toEqual(['Minimalizuj', 'Zamknij']);
+    expect(header.element.querySelector('.wt-header__actions')).toBeNull();
     const minimise = byLabel(header.element, 'Minimalizuj') as HTMLButtonElement;
     expect(minimise.title).toBe('Minimalizuj');
     minimise.click();
@@ -47,10 +58,7 @@ describe('header', () => {
 
   it('has back and forward before refresh, switched off until there is somewhere to go', () => {
     const { header, handlers } = build();
-    const labels = [...header.element.querySelectorAll('.wt-header__actions button')].map(
-      (button) => button.getAttribute('aria-label') ?? button.textContent,
-    );
-    expect(labels.slice(0, 3)).toEqual(['Cofnij', 'Ponów', 'Odśwież']);
+    expect(names(header.element, '.wt-header__tools button').slice(0, 3)).toEqual(['Cofnij', 'Ponów', 'Odśwież']);
     const back = byLabel(header.element, 'Cofnij') as HTMLButtonElement;
     const forward = byLabel(header.element, 'Ponów') as HTMLButtonElement;
     expect([back.disabled, forward.disabled, back.title, forward.title]).toEqual([true, true, 'Cofnij', 'Ponów']);
@@ -223,9 +231,97 @@ describe('header', () => {
   it('leaves the action buttons as they were', () => {
     const { header } = build();
     header.setPerson('Maksymilian Aleksander Konstanty Brzeczyszczykiewicz-Wolski');
-    const labels = [...header.element.querySelectorAll('.wt-header__actions button')].map(
-      (button) => button.getAttribute('aria-label') ?? button.textContent,
-    );
-    expect(labels).toEqual(['Cofnij', 'Ponów', 'Odśwież', 'Ustawienia', 'Minimalizuj', 'Zamknij']);
+    expect(names(header.element, '.wt-header__window button')).toEqual(['Minimalizuj', 'Zamknij']);
+    expect(names(header.element, '.wt-header__tools button')).toEqual([
+      'Cofnij',
+      'Ponów',
+      'Odśwież',
+      'Resetuj',
+      'Ustawienia',
+    ]);
+  });
+
+  it('has its buttons in the reading order', () => {
+    const { header } = build();
+    // The order of the elements is the order of the Tab key (004 FR-006).
+    expect(names(header.element, 'button')).toEqual([
+      'Minimalizuj',
+      'Zamknij',
+      'Cofnij',
+      'Ponów',
+      'Odśwież',
+      'Resetuj',
+      'Ustawienia',
+    ]);
+  });
+});
+
+describe('the reset button (spec 004)', () => {
+  const byText = (root: HTMLElement, text: string) =>
+    [...root.querySelectorAll('button')].find((button) => button.textContent === text) as HTMLButtonElement;
+
+  it('has a sign and a label', () => {
+    const { header } = build();
+    const reset = byText(header.element, 'Resetuj');
+    expect(reset.className).toBe('wt-button wt-button--reset');
+    expect(reset.type).toBe('button');
+    expect(reset.querySelectorAll('svg.wt-icon')).toHaveLength(1);
+    expect([...reset.querySelectorAll('span')].map((span) => span.textContent)).toEqual(['Resetuj']);
+    // The name comes from the label, as for refresh; the tip repeats it (FR-009).
+    expect(reset.hasAttribute('aria-label')).toBe(false);
+    expect(reset.title).toBe('Resetuj');
+  });
+
+  it('is switched off until there is something to reset', () => {
+    const { header, handlers } = build();
+    const reset = byText(header.element, 'Resetuj');
+    expect(reset.disabled).toBe(true);
+    reset.click();
+    expect(handlers.onReset).not.toHaveBeenCalled();
+
+    header.setResettable(true);
+    expect(reset.disabled).toBe(false);
+    reset.click();
+    expect(handlers.onReset).toHaveBeenCalledOnce();
+
+    header.setResettable(false);
+    expect(reset.disabled).toBe(true);
+  });
+
+  it('hands the focus to refresh when it is switched off under it', () => {
+    for (const busy of [false, true]) {
+      const { header } = build();
+      document.body.appendChild(header.element);
+      const reset = byText(header.element, 'Resetuj');
+      const refresh = byText(header.element, 'Odśwież');
+      header.setResettable(true);
+      // Refresh can hold the focus also while a load runs (003 FR-030).
+      header.setBusy(busy);
+      reset.focus();
+      expect(document.activeElement).toBe(reset);
+
+      header.setResettable(false);
+      expect(document.activeElement).toBe(refresh);
+      header.element.remove();
+    }
+  });
+
+  it('leaves the focus alone when it is elsewhere, and when nothing changes', () => {
+    const { header } = build();
+    document.body.appendChild(header.element);
+    const reset = byText(header.element, 'Resetuj');
+    const close = byLabel(header.element, 'Zamknij') as HTMLButtonElement;
+    header.setResettable(true);
+    close.focus();
+    header.setResettable(false);
+    expect(document.activeElement).toBe(close);
+    header.setResettable(false);
+    expect([reset.disabled, document.activeElement === close]).toEqual([true, true]);
+
+    header.setResettable(true);
+    reset.focus();
+    header.setResettable(true);
+    expect([reset.disabled, document.activeElement === reset]).toEqual([false, true]);
+    header.element.remove();
   });
 });

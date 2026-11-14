@@ -14,7 +14,8 @@ import { buildFile, saveFile } from '../export/index';
 import type { JiraGateway, Session } from '../jira/gateway';
 import { findPeople, getPerson } from '../jira/people-finder';
 import { loadPeriod } from '../jira/worklog-loader';
-import { Controller, type Timers } from './controller';
+import { APP_NAME } from './about';
+import { Controller, samePeriod, type Timers } from './controller';
 import { el } from './dom';
 import { createHeader } from './header';
 import { clampLauncher, createLauncher, fitLauncher } from './launcher';
@@ -46,6 +47,8 @@ export interface App {
   close(): void;
   /** Hides the panel and keeps the selected period for the next open (FR-064). */
   minimise(): void;
+  /** Back to the start view with the panel open; does nothing while the panel is hidden. */
+  reset(): void;
 }
 
 const browserTimers: Timers = {
@@ -94,7 +97,11 @@ export async function mountApp(
     onBack: () => void controller().back(),
     onForward: () => void controller().forward(),
     onRefresh: () => void controller().refresh(),
-    onSettings: () => popover.toggle(),
+    onReset: () => reset(),
+    onSettings: () => {
+      placeSettings();
+      popover.toggle();
+    },
     onMinimise: () => minimise(),
     onClose: () => close(),
   });
@@ -147,11 +154,13 @@ export async function mountApp(
     onFocusLost: () => header.focusFallback(),
   });
 
-  const panel = el(
-    'section',
-    { class: 'wt-panel', attrs: { role: 'dialog', 'aria-label': 'Jira Custom Tempo', hidden: true } },
-    [header.element, popover.element, periodBar.element, progress.element, table.element],
-  );
+  const panel = el('section', { class: 'wt-panel', attrs: { role: 'dialog', 'aria-label': APP_NAME, hidden: true } }, [
+    header.element,
+    popover.element,
+    periodBar.element,
+    progress.element,
+    table.element,
+  ]);
   const launcher = createLauncher({
     onToggle: () => (isOpen() ? minimise() : void open()),
     onMove: (position, done) => {
@@ -178,6 +187,16 @@ export async function mountApp(
     },
   });
   panel.prepend(...resize.elements);
+
+  /**
+   * The settings stand directly under the header (004 FR-005). The header has no fixed
+   * height: a title that wraps adds a line. The stylesheet reads the place from this
+   * property; on a page without layout there is nothing to measure and its own value stays.
+   */
+  function placeSettings(): void {
+    const height = header.element.offsetHeight;
+    if (height > 0) popover.element.style.setProperty('--wt-popover-top', `${height}px`);
+  }
 
   /** The stylesheet reads the launcher's place from these two properties on the root. */
   function placeLauncher(position: LauncherPosition): void {
@@ -224,8 +243,13 @@ export async function mountApp(
       launcher.show(summary, period);
       // With a name the launcher is wide, and a longer total must not push it out.
       if (!isSelf()) keepLauncherInside();
+      // The new total may wrap the title differently.
+      if (popover.isOpen()) placeSettings();
     },
-    onFailed: (period) => launcher.showError(period),
+    onFailed: (period) => {
+      launcher.showError(period);
+      if (popover.isOpen()) placeSettings();
+    },
   });
   controller().setActive(false);
 
@@ -260,22 +284,51 @@ export async function mountApp(
     launcher.element.focus();
   }
 
-  function close(): void {
-    if (!isOpen()) return;
-    const wasToday = controller().period.preset === 'today';
+  /**
+   * The choice goes back to the signed-in user (002 FR-028). Whatever is shown of another
+   * person goes at once: nothing of them may stand under the user's own name, in the open
+   * panel or waiting in the hidden one. Returns whether another person was shown.
+   */
+  function forgetPerson(): boolean {
     const wasOther = !isSelf();
-    minimise();
-    startOnToday = true;
-    // The close button also forgets the chosen person (002 FR-028).
     choice = { mode: 'current', person: self };
     if (wasOther) {
-      // Nothing of the other person may wait in the hidden panel for the next opening.
       controller().reset(self);
       showPerson();
       launcher.showPending(presetPeriod('today', session.timeZone, now()));
     }
+    return wasOther;
+  }
+
+  function close(): void {
+    if (!isOpen()) return;
+    const wasToday = controller().period.preset === 'today';
+    minimise();
+    startOnToday = true;
+    // The close button also forgets the chosen person.
+    const wasOther = forgetPerson();
     // The launcher goes back to today with the panel's period forgotten.
     if (!wasToday || wasOther) void loadToday();
+  }
+
+  /**
+   * The reset button: what the close button forgets, with the panel open (004 FR-010,
+   * FR-011). The period, the person, and the steps of back and forward go; the stored
+   * settings and the sort order stay.
+   */
+  function reset(): void {
+    if (!isOpen()) return;
+    // As when the panel is hidden: nothing is saved, a running check is given up (FR-016).
+    popover.cancel();
+    table.closeMenu();
+    const today = presetPeriod('today', session.timeZone, now());
+    const moved = !samePeriod(controller().period, today);
+    const wasOther = forgetPerson();
+    // The launcher must not show the total of the period that was left under the label of
+    // today. With only the steps forgotten it keeps its total until the new one arrives
+    // (FR-014).
+    if (moved && !wasOther) launcher.showPending(today);
+    void controller().start();
   }
 
   // ------------------------------------------------- the total on the launcher
@@ -347,10 +400,12 @@ export async function mountApp(
       if (fitted) placeLauncher(fitted);
     }
     if (isOpen()) resize.sync();
+    // The same event tells of a window that changed its size: the title may wrap anew.
+    if (popover.isOpen()) placeSettings();
   }
   showPerson();
   globalThis.addEventListener?.('resize', keepLauncherInside);
   await loadToday();
 
-  return { root, controller: controller(), isOpen, open, close, minimise };
+  return { root, controller: controller(), isOpen, open, close, minimise, reset };
 }

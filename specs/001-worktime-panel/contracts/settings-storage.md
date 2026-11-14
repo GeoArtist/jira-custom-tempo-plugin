@@ -26,7 +26,7 @@ device, or a second Jira site starts with the defaults.
 |-------|------|---------|---------|
 | `refreshMinutes` | integer | 0 to 1440; `0` = auto-refresh off | `5` |
 | `theme` | string | `"dark"` or `"light"` | `"dark"` |
-| `panelHeight` | integer or `null` | 440 to 4000 (px); `null` = the default height, 50% of the window | `null` |
+| `panelHeight` | integer or `null` | 592 to 4000 (px); a stored 440 to 591 is read as 592 (004 FR-008); `null` = the default height, 50% of the window | `null` |
 | `panelWidth` | integer or `null` | 640 to 4000 (px); `null` = the default width, 800 px | `null` |
 | `launcher` | object or `null` | `{ "right": n, "bottom": n }`, integers 0 to 10000: px from the window's right and bottom edges to the launcher's own; `null` = the default corner | `null` |
 

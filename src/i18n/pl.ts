@@ -1,12 +1,14 @@
 // Every user-visible text of the app. No other source file may contain Polish text.
 // Wording is fixed by specs/001-worktime-panel/contracts/ui.md, for the texts about the
-// selected person by specs/002-other-user-worktime/spec.md (FR-029), and for the export by
-// specs/003-table-export/spec.md (FR-028).
+// selected person by specs/002-other-user-worktime/spec.md (FR-029), for the export by
+// specs/003-table-export/spec.md (FR-028), and for the reset button by
+// specs/004-reset-button-toolbar/contracts/ui.md.
 
 export const pl = {
   back: 'Cofnij',
   forward: 'Ponów',
   refresh: 'Odśwież',
+  reset: 'Resetuj',
   settings: 'Ustawienia',
   minimise: 'Minimalizuj',
   close: 'Zamknij',

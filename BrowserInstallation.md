@@ -7,7 +7,7 @@ Wtyczki nie ma jeszcze w sklepie z rozszerzeniami, dlatego instalujesz ją z fol
 
 ## Zanim zaczniesz
 
-1. Pobierz plik `jira-custom-tempo-0.4.0.zip` (dostaniesz go od osoby, która udostępnia wtyczkę).
+1. Pobierz plik `jira-custom-tempo-0.5.0.zip` (dostaniesz go od osoby, która udostępnia wtyczkę).
 2. Kliknij plik prawym przyciskiem myszy i wybierz „Wyodrębnij wszystkie” (Windows) albo kliknij
    go dwukrotnie (Mac).
 3. Przenieś rozpakowany folder w miejsce, z którego go nie usuniesz, na przykład do

@@ -39,12 +39,12 @@ describe('readSettings', () => {
 
   it('reads stored values, including 0 for "off"', () => {
     const stored = memoryStorage(
-      JSON.stringify({ refreshMinutes: 0, theme: 'light', panelHeight: 600, panelWidth: null, launcher: null }),
+      JSON.stringify({ refreshMinutes: 0, theme: 'light', panelHeight: 800, panelWidth: null, launcher: null }),
     );
     expect(readSettings(stored)).toEqual({
       refreshMinutes: 0,
       theme: 'light',
-      panelHeight: 600,
+      panelHeight: 800,
       panelWidth: null,
       launcher: null,
       lastPerson: null,
@@ -87,6 +87,23 @@ describe('readSettings', () => {
     }
     expect(readSettings(memoryStorage(JSON.stringify({ refreshMinutes: 2.5 }))).refreshMinutes).toBe(5);
   });
+
+  it('reads a height chosen before the header had two rows as the lowest height of today (004 FR-008)', () => {
+    const read = (panelHeight: number) => {
+      const stored = JSON.stringify({ theme: 'light', panelHeight });
+      const storage = memoryStorage(stored);
+      const height = readSettings(storage).panelHeight;
+      // Reading does not write: the value is stored again with the next change.
+      expect(storage.data.get(SETTINGS_KEY)).toBe(stored);
+      return height;
+    };
+    expect(read(440)).toBe(592);
+    expect(read(484)).toBe(592);
+    expect(read(591)).toBe(592);
+    expect(read(592)).toBe(592);
+    expect(read(640)).toBe(640);
+    expect(read(439)).toBeNull();
+  });
 });
 
 describe('writeSettings', () => {
@@ -95,7 +112,7 @@ describe('writeSettings', () => {
     const settings = {
       refreshMinutes: 10,
       theme: 'light',
-      panelHeight: 600,
+      panelHeight: 800,
       panelWidth: null,
       launcher: null,
       lastPerson: null,

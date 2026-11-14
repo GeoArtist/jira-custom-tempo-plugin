@@ -71,14 +71,22 @@ const tableKeys = (page: Page): Promise<string[]> => page.locator('.wt-table tbo
 const tableSums = (page: Page): Promise<string[]> => page.locator('.wt-table tbody .wt-col-sum').allTextContents();
 
 test.describe('the control and the CSV file', () => {
-  test('the control stands at the left of the total row and opens a menu of two formats above it', async ({ page }) => {
+  test('the control stands in the total row, before the total, and opens a menu of two formats above it', async ({
+    page,
+  }, testInfo) => {
     await open(page);
     const button = await exportButton(page).boundingBox();
     const total = await footerTotal(page).boundingBox();
     const footer = await page.locator('.wt-footer').boundingBox();
     if (!button || !total || !footer) throw new Error('the total row is not laid out');
     expect(button.x).toBeLessThan(total.x);
-    expect(button.x - footer.x).toBeLessThan(24);
+    if (testInfo.project.name === 'phone') {
+      // At the left edge, where three parts do not fit side by side.
+      expect(button.x - footer.x).toBeLessThan(24);
+    } else {
+      // In the middle of the row, between the name of the add-on and the total (004 FR-025).
+      expect(Math.abs(button.x + button.width / 2 - (footer.x + footer.width / 2))).toBeLessThan(1);
+    }
     expect(footer.x + footer.width - (total.x + total.width)).toBeLessThan(24);
     // On the same line.
     expect(Math.abs(button.y + button.height / 2 - (total.y + total.height / 2))).toBeLessThan(3);

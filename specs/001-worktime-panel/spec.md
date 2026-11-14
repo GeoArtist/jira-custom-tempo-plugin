@@ -40,6 +40,8 @@
 
 **Amended by 003-table-export (2026-11-13)**: the total row of FR-014 carries, at its left edge, a control "Eksport" that saves the table on screen as a CSV or an XLSX file ([spec 003](../003-table-export/spec.md)); the label "Suma czasu:" and its value keep their place at the right edge (FR-062), and the row is as high as a control. "Odśwież" is still switched off while a load runs, but it keeps the keyboard focus (003 FR-030).
 
+**Amended by 004-reset-button-toolbar (2026-11-14)**: the header has two rows ([spec 004](../004-reset-button-toolbar/spec.md), FR-001 to FR-008, FR-024): the title with the two window buttons, minimise and close, and under it, 32 px lower than the usual gap, a toolbar with "Cofnij", "Ponów", "Odśwież", the new "Resetuj", and the settings. FR-086 is changed in one point: the minimise button stands directly before the close button, in the title row, no longer after the settings button. The total row of FR-014 carries the name of the plugin with its version at its left edge, the bottom left corner of the panel (004 FR-023), and the export control of 003 in its middle (004 FR-025). FR-066 is changed: the part with the bar or the chart has 16 px more room above and below (004 FR-024). "Resetuj" brings the open panel back to today for the signed-in user and forgets the steps of "Cofnij" and "Ponów", as the close button does (FR-049, FR-082; 004 FR-010, FR-011). The lowest height of the panel is 592 px in place of 440 px (FR-059, and the number in FR-075), because the header is one row higher and the toolbar and the bar have more room; a stored height from 440 px to 591 px is read as 592 px (004 FR-008).
+
 ## Inspiration Images
 
 The two mock-ups supplied with the request are stored with this spec. They show the intended look
@@ -574,7 +576,7 @@ in settings, save, reopen Jira, and confirm it is still light and every element 
 - **FR-059**: The panel MUST keep one height whatever it shows, and the user MUST be able to
   set that height by dragging the panel's free horizontal edge, the one away from the launcher
   (the top edge by default), or with the arrow keys on it. The default is 50% of the window
-  height. The height MUST NOT go below what shows one table row (440 px) nor above what the
+  height. The height MUST NOT go below what shows one table row (592 px; 440 px until 004 FR-008) nor above what the
   window allows. The chosen height MUST be remembered in the browser like the other settings;
   a double click on the edge returns to the default.
 - **FR-071**: The user MUST be able to set the panel's width in the same way at its free side
@@ -615,7 +617,7 @@ in settings, save, reopen Jira, and confirm it is still light and every element 
   panel is placed in this order: above the launcher, else below it; with its right edge in
   line with the launcher's, else its left edge, else anywhere inside the window. When the
   chosen height fits on neither side of the launcher, the panel MUST become lower by itself,
-  as low as the larger of the two sides allows, also below 440 px; the chosen height stays
+  as low as the larger of the two sides allows, also below 592 px; the chosen height stays
   remembered and comes back when there is room. A panel lower than its content scrolls as a
   whole. The side MUST be chosen afresh whenever the launcher moves or the window changes
   size, so the panel returns to the launcher's edge as soon as it fits there again. (Requested
@@ -748,7 +750,7 @@ in settings, save, reopen Jira, and confirm it is still light and every element 
 
 - "Configurable height" is done by dragging the top edge of the panel, not by a number in the
   settings: the user sees the result while choosing.
-- The lowest height, 440 px, is what the header, the period box, the bar, the column headers,
+- The lowest height, 592 px (440 px before 004 FR-008), is what the header, the period box, the bar or the chart, the column headers,
   one row of one or two lines, and the total row need together.
 - A part of a day counts as "Zakres:" on the launcher, because its total is not the total of
   that day.

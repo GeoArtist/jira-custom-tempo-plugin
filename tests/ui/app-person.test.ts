@@ -197,7 +197,7 @@ describe('changing the person', () => {
     const { root, controller, storage } = await mountOpen(gateway, {
       refreshMinutes: 5,
       theme: 'dark',
-      panelHeight: 600,
+      panelHeight: 800,
       panelWidth: 700,
       launcher: { right: 300, bottom: 200 },
     });
@@ -217,9 +217,9 @@ describe('changing the person', () => {
     expect(chart.dataset.granularity).toBe('day');
     expect(byLabel(root, 'Oddal').disabled).toBe(false);
     const panel = root.querySelector<HTMLElement>('.wt-panel') as HTMLElement;
-    expect(panel.style.getPropertyValue('--wt-panel-height')).toBe('600px');
+    expect(panel.style.getPropertyValue('--wt-panel-height')).toBe('800px');
     expect(root.style.getPropertyValue('--wt-launcher-right')).toBe('300px');
-    expect(stored(storage)).toMatchObject({ panelHeight: 600, panelWidth: 700, launcher: { right: 300, bottom: 200 } });
+    expect(stored(storage)).toMatchObject({ panelHeight: 800, panelWidth: 700, launcher: { right: 300, bottom: 200 } });
   });
 
   it('goes from one other person to a second one in the same way', async () => {

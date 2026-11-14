@@ -103,8 +103,10 @@ ul {
     padding: 0;
   }
 
-  // Back and forward: switched off when there is nowhere to go, not because of a load.
-  &--history:disabled {
+  // Back, forward, and reset: switched off when there is nothing to do, not because of a
+  // load.
+  &--history:disabled,
+  &--reset:disabled {
     cursor: default;
     opacity: 0.4;
   }

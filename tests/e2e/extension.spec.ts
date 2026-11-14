@@ -168,7 +168,7 @@ test.describe('the built extension on a Jira Cloud address', () => {
     }
   });
 
-  test('keeps the selected period when minimised with the launcher, until the close button', async () => {
+  test('keeps the selected period when minimised with the launcher, until the reset or the close button', async () => {
     const { context } = await jiraWithExtension(true);
     try {
       const page = await context.newPage();
@@ -199,7 +199,23 @@ test.describe('the built extension on a Jira Cloud address', () => {
       await launcher.click();
       await expect(pressed('Miesiąc')).toHaveAttribute('aria-pressed', 'true');
 
-      // Only the close button goes back to today.
+      // The header has two rows: the window buttons, and the toolbar under them (004).
+      await expect(page.locator('.wt-header__window button')).toHaveCount(2);
+      await expect(page.locator('.wt-header__tools button')).toHaveCount(5);
+
+      // The reset button goes back to today with the panel open.
+      const reset = pressed('Resetuj');
+      await expect(reset).toBeEnabled();
+      await reset.click();
+      await expect(page.locator('.wt-panel')).toBeVisible();
+      await expect(pressed('Dzień')).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('#wt-day')).not.toHaveValue(day);
+      await expect(launcher).toHaveText('Dziś: 4h 15m');
+      await expect(reset).toBeDisabled();
+
+      // The close button goes back to today as well, as before.
+      await pressed('Miesiąc').click();
+      await expect(reset).toBeEnabled();
       await page.getByRole('button', { name: 'Zamknij' }).click();
       await expect(launcher).toHaveText('Dziś: 4h 15m');
       await launcher.click();

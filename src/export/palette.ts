@@ -14,11 +14,11 @@ export const PALETTE = {
   /** Visible on white, also in print; the muted text of the dark appearance. */
   border: '#9aa3b2',
   tones: {
-    blue: '#0a6199',
-    green: '#146c43',
-    yellow: '#7a5200',
-    orange: '#a34100',
     red: '#b3261e',
+    yellow: '#7a5200',
+    green: '#146c43',
+    blue: '#0b5cc0',
+    violet: '#6b35c4',
   } satisfies Record<ProgressTone, string>,
 } as const;
 

@@ -360,9 +360,10 @@ FR-032), and FR-013 for what the name field holds on opening (also behind FR-036
   dark appearance and its darker shade `#b84e00` in the light one (`#ff6c00` itself reaches
   only 2.8:1 on the white of the light appearance). It MUST differ from the title text, the
   muted text, and the link colour, and its contrast against the panel's background MUST be
-  at least 4.5:1 in both appearances. It is close to the orange among the progress colours,
-  which a total takes between 8 and 16 hours; the name is told from a total by its place
-  (a line of its own above the title), its smaller size, and its text.
+  at least 4.5:1 in both appearances. It is close to the red-to-yellow colours a total takes
+  below 4 hours (001 Amendment 15; before, to the orange of 8 to 16 hours); the name is told
+  from a total by its place (a line of its own above the title), its smaller size, and its
+  text.
 - **FR-008**: The name MUST be written as Jira has it, not as the user typed it.
 - **FR-009**: A name too long for the header MUST be shown on one line and cut with an
   ellipsis; the full name MUST be available as a tip. The header buttons MUST keep their

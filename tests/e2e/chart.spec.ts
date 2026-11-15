@@ -57,16 +57,15 @@ test('a bar has the colour of the progress bar for its value, and stands out und
   await expect(page.locator(bars)).toHaveCount(7);
   await page.mouse.move(0, 0);
 
-  // Friday, 10h 10m, is past the norm: the yellow of the bar, not its blue or green.
+  // Friday, 10h 10m, is past the norm: between the green and the blue of the bar, not red.
   const friday = page.locator(columns).nth(4);
   await expect(friday).toHaveAttribute('data-seconds', String(10 * 3600 + 10 * 60));
-  const [red, green, blue] = await paintedColour(friday.locator(bars), 'backgroundColor');
-  expect(red).toBeGreaterThan(200);
-  expect(green).toBeGreaterThan(150);
-  expect(blue).toBeLessThan(120);
-  // Thursday, half an hour, is at the blue end.
+  const [red = 0, green = 0, blue = 0] = await paintedColour(friday.locator(bars), 'backgroundColor');
+  expect(green).toBeGreaterThan(red);
+  expect(blue).toBeGreaterThan(red);
+  // Thursday, half an hour, is at the red end.
   const thursday = await paintedColour(page.locator(columns).nth(3).locator(bars), 'backgroundColor');
-  expect(thursday[2]).toBeGreaterThan(thursday[0] ?? 255);
+  expect(thursday[0]).toBeGreaterThan(thursday[2] ?? 255);
 
   const tip = page.locator('.wt-chart__tip');
   await expect(friday.locator(bars)).toHaveCSS('opacity', '0.75');

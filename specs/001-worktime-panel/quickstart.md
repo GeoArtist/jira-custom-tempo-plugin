@@ -72,12 +72,12 @@ Open any page of the Jira site while signed in.
 
 | # | Story | Do | Expect |
 |---|-------|----|--------|
-| 1 | US5 | Look near the bottom-right corner | The launcher shows "Dziś: 10h 10m" with a yellow dot and total; the Jira page works as before |
+| 1 | US5 | Look near the bottom-right corner | The launcher shows "Dziś: 10h 10m" with a blue-green dot and total; the Jira page works as before |
 | 2 | US5 | Click the launcher | The panel opens above it, in the dark theme, on today |
 | 3 | US1 | Look at the panel | Title `<Weekday> dd-mm-yyyy · 10h 10m`; rows A, B, C; A shows three entry lines in one row; "Suma czasu: 10h 10m" |
 | 4 | US1 | Check ticket A | The other user's entry is absent; the long title wraps and nothing overflows |
 | 5 | US1 | Click a ticket number | The Jira ticket opens in a new tab |
-| 6 | US2 | Look at the bar | Blue-to-green up to 8h, yellow beyond; nothing is written under the bar; both totals yellow |
+| 6 | US2 | Look at the bar | Red through yellow to green up to 8h, green turning blue beyond; nothing is written under the bar; both totals blue-green |
 | 7 | US3 | Press the previous arrow on today | One row (B); title shows yesterday's weekday and date; the launcher shows yesterday's date and total |
 | 8 | US3 | Click "Tydzień" | Entries show a `dd-mm` date; title shows the Monday-to-Sunday range; "Od" is Monday 00:00 and "Do" is Sunday 23:59; the bar is light gray with no fill and both totals are in the normal text colour |
 | 9 | US3 | Set "Od" today 10:00 and "Do" today 12:00 | Only entries starting 10:00 to 12:00 are shown (B 10:30, C 11:00); total 2h 15m; title shows the weekday, date, and `10:00–12:00`; the bar is active |
@@ -135,7 +135,7 @@ Open any page of the Jira site while signed in.
 | 58 | US5 | Make the panel as tall as it goes, then drag the launcher to the middle of the window, to each corner, and to each edge | The panel and the launcher are always wholly inside the window and never cover each other; in the middle the panel gets lower by itself and scrolls; back in a corner it has the chosen height again |
 | 59 | US5 | Put the launcher at the top left, open the panel, make the browser window narrow, then wide again; do the same with its height | The panel stays attached to the launcher the whole time; when the window is wide again the panel is back in line with the launcher's edge |
 | 60 | US3 | Select "Tydzień" | A bar chart stands where the progress bar was: seven bars that do not touch, days under them, hours at the side, a dashed line at 8h; the panel keeps its size |
-| 61 | US3 | Compare the bars with the days in the table | Each bar is as tall as the time of its day; a day up to 8h is blue to green, a longer one yellow to red; an empty day has no bar |
+| 61 | US3 | Compare the bars with the days in the table | Each bar is as tall as the time of its day; a day up to 8h is red through yellow to green, a longer one green through blue to violet; an empty day has no bar |
 | 62 | US3 | Move the pointer over a bar, then over an empty day | The bar gets brighter and a tip shows the day and "Suma czasu:" with its total; the empty day shows 0h 00m |
 | 63 | US3 | Select "Miesiąc", then "Rok" | A bar per day of the month; then twelve bars, one per month, with "Przybliż" and "Oddal" at the right |
 | 64 | US3 | Press "Przybliż" on the year, scroll the chart, press "Oddal" | 365 bars of days that scroll sideways around the same part of the year; then twelve months again |

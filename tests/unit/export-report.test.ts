@@ -118,7 +118,7 @@ describe('report', () => {
   });
 
   it('gives the total the colour it has on screen, in the shades of a white sheet', () => {
-    // 10h 10m of a single day lies between yellow and orange.
+    // 10h 10m of a single day lies between green and blue.
     const single = buildReport(view(todayRows, today)).totalColour;
     expect(single).toMatch(/^#[0-9a-f]{6}$/);
     expect([PALETTE.text, PALETTE.muted]).not.toContain(single);

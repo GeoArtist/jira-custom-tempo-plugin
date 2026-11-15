@@ -32,7 +32,7 @@ function report(rows: ReportRow[] = ROWS, extra: Partial<Report> = {}): Report {
     period: 'Piątek 13-11-2026',
     total: '6h 55m',
     totalMinutes: 415,
-    totalColour: mix(PALETTE.tones.blue, PALETTE.tones.green, 415 / 480),
+    totalColour: mix(PALETTE.tones.yellow, PALETTE.tones.green, 350 / 480),
     rows,
     fileBase: 'Jozef_Sliwinski_13-11-2026_tempo_report',
     ...extra,
@@ -254,7 +254,7 @@ describe('xlsx: the cells', () => {
 describe('xlsx: the look', () => {
   it('uses one font, with the sizes and colours of the three title rows', () => {
     const { look } = open();
-    const total = mix(PALETTE.tones.blue, PALETTE.tones.green, 415 / 480);
+    const total = mix(PALETTE.tones.yellow, PALETTE.tones.green, 350 / 480);
     expect(look('A1')).toMatchObject({ fontName: 'Calibri', size: 14, bold: true, colour: ARGB(PALETTE.name) });
     expect(look('A2')).toMatchObject({ fontName: 'Calibri', size: 12, bold: true, colour: ARGB(PALETTE.text) });
     expect(look('A3')).toMatchObject({ fontName: 'Calibri', size: 12, bold: true, colour: ARGB(total) });
@@ -293,7 +293,7 @@ describe('xlsx: the look', () => {
 
   it('gives the total row bold text in the colour of the total, at the right', () => {
     const { look } = open();
-    const total = ARGB(mix(PALETTE.tones.blue, PALETTE.tones.green, 415 / 480));
+    const total = ARGB(mix(PALETTE.tones.yellow, PALETTE.tones.green, 350 / 480));
     expect(look('C9')).toMatchObject({ bold: true, colour: total, horizontal: 'right' });
     expect(look('D9')).toMatchObject({ bold: true, colour: total, horizontal: 'right' });
     expect(open(report(ROWS, { totalColour: PALETTE.text })).look('D9').colour).toBe(ARGB(PALETTE.text));

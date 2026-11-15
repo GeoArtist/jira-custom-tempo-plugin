@@ -116,9 +116,9 @@ Colour rule when `progressActive`, with `r = totalSeconds / normSeconds`:
 | Range | Colour |
 |-------|--------|
 | `r = 0` | `neutral` (normal text colour; no progress yet) |
-| `0 < r ≤ 1` | interpolated from light blue (`r → 0`) to light green (`r = 1`) |
-| `1 < r ≤ 3` | interpolated yellow (`r → 1`) through orange (`r = 2`) to red (`r = 3`) |
-| `r > 3` | red |
+| `0 < r ≤ 1` | interpolated from red (`r → 0`) through yellow (`r = 0.5`) to green (`r = 1`) |
+| `1 < r ≤ 3` | interpolated from green (`r → 1`) through blue (`r = 2`) to violet (`r = 3`) |
+| `r > 3` | violet |
 
 When not `progressActive` (a period longer than one day): `colour` is `neutral`, and the bar
 chart below stands in place of the bar. Nothing is written under the bar (FR-020).
@@ -150,8 +150,8 @@ Rules:
 A total of zero is shown muted wherever it appears (FR-068).
 
 The same `colour` value is applied to the title total, the footer total, and the launcher. An
-active bar always paints the 0-to-8h segment in the blue-to-green gradient and the part beyond
-8h in the yellow-to-red gradient (spec User Story 2, scenario 3). The launcher shows the period
+active bar always paints the 0-to-8h segment in the red-yellow-green gradient and the part
+beyond 8h in the green-blue-violet gradient (spec User Story 2, scenario 3). The launcher shows the period
 the panel is on and follows the same colour rule (FR-040).
 
 ### UserSettings

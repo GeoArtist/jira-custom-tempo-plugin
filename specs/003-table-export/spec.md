@@ -504,11 +504,13 @@ moment whether the control is present and usable as FR-002 to FR-004 say.
   | Total of a longer period | the text colour (001 FR-019) |
 
   The progress colour of a single day's total follows 001 FR-016 to FR-018, with the text
-  shades of the light appearance: blue `#0a6199`, green `#146c43`, yellow `#7a5200`,
-  orange `#a34100`, red `#b3261e`. From 0 to 8 hours it goes from blue to green, from 8 to
-  16 hours from yellow to orange, from 16 to 24 hours from orange to red, and it is red
-  above. Between two shades each of red, green, and blue is taken in proportion to how far
-  the total is through its 8 hours, and rounded.
+  shades of the light appearance: red `#b3261e`, yellow `#7a5200`, green `#146c43`, blue
+  `#0b5cc0`, violet `#6b35c4`. From 0 to 4 hours it goes from red to yellow, from 4 to 8
+  hours from yellow to green, from 8 to 16 hours from green to blue, from 16 to 24 hours
+  from blue to violet, and it is violet above. Between two shades each of red, green, and
+  blue is taken in proportion to how far the total is through its stretch, and rounded.
+  (Changed with 001 Amendment 15, 2026-11-15; before, blue to green and yellow through
+  orange to red.)
 
   Every text MUST have a contrast of at least 4.5:1 against its background.
 - **FR-025**: The sum of each ticket row (column D) and the total in the total row (column

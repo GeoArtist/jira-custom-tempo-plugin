@@ -559,10 +559,12 @@ $narrow: 600px; // below this the table stacks and controls take the touch size
   border-radius: var(--wt-radius-pill);
   overflow: hidden;
   // Both gradients are painted at full size, so the colour at any point shows the value
-  // reached there: blue to green up to the norm (60% of the width), then yellow to red.
+  // reached there: red through yellow (4h) to green up to the norm (60% of the width), then
+  // green through blue (16h) to violet. The stops are those of colourFor in domain/summary.ts.
   background:
-    linear-gradient(90deg, var(--wt-progress-blue), var(--wt-progress-green)) left / 60% 100% no-repeat,
-    linear-gradient(90deg, var(--wt-progress-yellow), var(--wt-progress-orange), var(--wt-progress-red)) right / 40%
+    linear-gradient(90deg, var(--wt-progress-red), var(--wt-progress-yellow), var(--wt-progress-green)) left / 60% 100%
+      no-repeat,
+    linear-gradient(90deg, var(--wt-progress-green), var(--wt-progress-blue), var(--wt-progress-violet)) right / 40%
       100% no-repeat,
     var(--wt-track);
 }

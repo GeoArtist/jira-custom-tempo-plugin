@@ -17,8 +17,9 @@ panel; you can drag it anywhere.
 
 <img src="docs/screenshots/launcher.png" alt="The launcher: Dziś: 10h 10m" width="150">
 
-**One day.** The progress bar against the 8-hour norm (blue to green up to 8 hours, yellow
-to red beyond), and a table with one row per ticket: every time entry and the sum.
+**One day.** The progress bar against the 8-hour norm (red through yellow to green up to 8
+hours, then green through blue to violet up to 24), and a table with one row per ticket: every
+time entry and the sum.
 
 <img src="docs/screenshots/day.png" alt="One day: the progress bar and the table of tickets" width="760">
 
@@ -73,7 +74,7 @@ the views; the round arrows beside the rows move to the previous and next month.
   a phone; there "Odśwież" and "Resetuj" show their signs only. The panel is at least 592 px
   high where the window has room for it.
 - **Total row**: at the foot of the panel, the name of the add-on with its version at the
-  left ("Jira Custom Tempo - 0.5.0"), "Eksport" in the middle while the table has rows, and
+  left ("Jira Custom Tempo - 0.5.1"), "Eksport" in the middle while the table has rows, and
   the total at the right. On a phone "Eksport" stands at the left and the name on a line
   below.
 - **Back and forward**: "Cofnij" and "Ponów" beside "Odśwież" return to the views you were

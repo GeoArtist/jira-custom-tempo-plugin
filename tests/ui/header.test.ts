@@ -117,9 +117,9 @@ describe('header', () => {
     const { header } = build();
     const total = header.element.querySelector<HTMLElement>('.wt-total') as HTMLElement;
     header.update(today, summarise(rows(4 * 3600), today));
-    expect(total.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-blue)');
-    expect(total.style.getPropertyValue('--wt-total-to')).toBe('var(--wt-tone-green)');
-    expect(total.style.getPropertyValue('--wt-total-pct')).toBe('50%');
+    expect(total.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-red)');
+    expect(total.style.getPropertyValue('--wt-total-to')).toBe('var(--wt-tone-yellow)');
+    expect(total.style.getPropertyValue('--wt-total-pct')).toBe('100%');
 
     const week = presetPeriod('thisWeek', TZ, FIXTURE_NOW);
     header.update(week, summarise(rows(4 * 3600), week));

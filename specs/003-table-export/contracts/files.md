@@ -143,11 +143,11 @@ Defined once in `src/export/palette.ts`; a test compares them with `_tokens.scss
 | header fill | `#0c66e4` | `--wt-accent` |
 | header text | `#ffffff` | `--wt-on-accent` |
 | border | `#9aa3b2` | none (the muted text of the dark appearance) |
-| tone blue | `#0a6199` | `--wt-tone-blue` |
-| tone green | `#146c43` | `--wt-tone-green` |
-| tone yellow | `#7a5200` | `--wt-tone-yellow` |
-| tone orange | `#a34100` | `--wt-tone-orange` |
 | tone red | `#b3261e` | `--wt-tone-red` |
+| tone yellow | `#7a5200` | `--wt-tone-yellow` |
+| tone green | `#146c43` | `--wt-tone-green` |
+| tone blue | `#0b5cc0` | `--wt-tone-blue` |
+| tone violet | `#6b35c4` | `--wt-tone-violet` |
 
 Total colour, from the `PeriodSummary` of the view:
 

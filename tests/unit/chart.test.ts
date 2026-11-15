@@ -77,9 +77,9 @@ describe('the buckets of the chart', () => {
       'day',
     );
     expect(buckets.slice(0, 4).map((bucket) => bucket.colour)).toEqual([
-      { from: 'blue', to: 'green', ratio: 0.5 },
-      { from: 'blue', to: 'green', ratio: 1 },
-      { from: 'yellow', to: 'orange', ratio: 0.5 },
+      { from: 'red', to: 'yellow', ratio: 1 },
+      { from: 'yellow', to: 'green', ratio: 1 },
+      { from: 'green', to: 'blue', ratio: 0.5 },
       null,
     ]);
   });
@@ -89,7 +89,7 @@ describe('the buckets of the chart', () => {
     const buckets = buildChart(rows([day(2026, 11, 2), 480, 84 * H], [day(2026, 3, 9), 480, H]), year, TZ, 'month');
     expect(buckets).toHaveLength(12);
     expect(buckets[10]).toMatchObject({ from: day(2026, 11, 1), to: day(2026, 11, 30), seconds: 84 * H });
-    expect(buckets[10]?.colour).toEqual({ from: 'blue', to: 'green', ratio: 0.5 });
+    expect(buckets[10]?.colour).toEqual({ from: 'red', to: 'yellow', ratio: 1 });
     expect(buckets[2]?.seconds).toBe(H);
     expect(buckets[0]?.colour).toBeNull();
   });

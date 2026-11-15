@@ -27,7 +27,7 @@
 ## Requirement Clarity
 
 - [ ] CHK012 - Is "clearly marked" for the 8-hour norm quantified with observable properties? [Clarity, Spec §FR-015]
-- [ ] CHK013 - Are "light blue", "light green", "yellow", "orange", "red", and "light-gray" tied to defined colour values, and is the hour at which orange is reached stated? [Clarity, Spec §FR-016, §FR-017, §FR-019]
+- [ ] CHK013 - Are "red", "yellow", "green", "blue", "violet", and "light-gray" tied to defined colour values, and are the hours at which yellow and blue are reached stated? [Clarity, Spec §FR-016, §FR-017, §FR-019]
 - [ ] CHK014 - Is "the user's local time zone" defined unambiguously as either the Jira profile time zone or the device time zone? [Ambiguity, Spec §FR-026]
 - [ ] CHK015 - Is "the previous or next period of the same length" defined for calendar months and for custom ranges with clock times? [Ambiguity, Spec §FR-025]
 - [ ] CHK016 - Is the format of the date shown with each time entry in multi-day periods specified? [Clarity, Spec §FR-011]

@@ -92,8 +92,8 @@ describe('launcher', () => {
   it("shows today's total in the colour of the progress bar, with the panel closed", async () => {
     const { app } = await mount(new FakeGateway(todayRoutes()));
     expect(launcher(app.root).textContent).toBe('Dziś: 10h 10m');
-    expect(launcher(app.root).style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-yellow)');
-    expect(launcher(app.root).style.getPropertyValue('--wt-total-to')).toBe('var(--wt-tone-orange)');
+    expect(launcher(app.root).style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-green)');
+    expect(launcher(app.root).style.getPropertyValue('--wt-total-to')).toBe('var(--wt-tone-blue)');
     expect(panel(app.root).hidden).toBe(true);
     expect(app.isOpen()).toBe(false);
     expect(launcher(app.root).getAttribute('aria-expanded')).toBe('false');
@@ -180,7 +180,7 @@ describe('opening the panel', () => {
   it('gives both totals the colour of the bar', async () => {
     const { root } = await mountOpen(new FakeGateway(todayRoutes()));
     const [title, footer] = [...root.querySelectorAll<HTMLElement>('.wt-panel .wt-total')];
-    expect(title?.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-yellow)');
+    expect(title?.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-green)');
     expect(footer?.style.cssText).toBe(title?.style.cssText);
     expect(root.querySelector('.wt-progress__caption')).toBeNull();
     expect(root.querySelector('.wt-subtitle')).toBeNull();
@@ -565,7 +565,7 @@ describe('changing the period', () => {
     expect(text(root, '.wt-progress__tip-period')).toBe('Piątek 06-11-2026');
     expect(text(root, '.wt-progress__tip-total')).toBe('Suma czasu: 10h 10m');
     const total = root.querySelector<HTMLElement>('.wt-progress__tip-total') as HTMLElement;
-    expect(total.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-yellow)');
+    expect(total.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-green)');
   });
 
   it('ignores the late answer of a period the user has already left', async () => {

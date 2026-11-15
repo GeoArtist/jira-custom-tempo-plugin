@@ -43,7 +43,7 @@ const summary = (totalSeconds: number, colour: PeriodSummary['colour']): PeriodS
   colour,
 });
 
-const TONES: ProgressTone[] = ['blue', 'green', 'yellow', 'orange', 'red'];
+const TONES: ProgressTone[] = ['red', 'yellow', 'green', 'blue', 'violet'];
 
 describe('palette of the sheet', () => {
   it('equals the tokens of the light appearance', () => {
@@ -73,10 +73,10 @@ describe('palette of the sheet', () => {
     expect(totalColour(summary(0, null))).toBe(PALETTE.muted);
     // A period longer than one day.
     expect(totalColour(summary(3600, null))).toBe(PALETTE.text);
-    expect(totalColour(summary(60, { from: 'blue', to: 'green', ratio: 0 }))).toBe(PALETTE.tones.blue);
-    expect(totalColour(summary(8 * 3600, { from: 'blue', to: 'green', ratio: 1 }))).toBe(PALETTE.tones.green);
-    expect(totalColour(summary(12 * 3600, { from: 'yellow', to: 'orange', ratio: 0.5 }))).toBe(
-      mix(PALETTE.tones.yellow, PALETTE.tones.orange, 0.5),
+    expect(totalColour(summary(60, { from: 'red', to: 'yellow', ratio: 0 }))).toBe(PALETTE.tones.red);
+    expect(totalColour(summary(8 * 3600, { from: 'yellow', to: 'green', ratio: 1 }))).toBe(PALETTE.tones.green);
+    expect(totalColour(summary(12 * 3600, { from: 'green', to: 'blue', ratio: 0.5 }))).toBe(
+      mix(PALETTE.tones.green, PALETTE.tones.blue, 0.5),
     );
   });
 
@@ -92,11 +92,12 @@ describe('palette of the sheet', () => {
       expect(contrast(colour, white), colour).toBeGreaterThanOrEqual(4.5);
     }
     expect(contrast(PALETTE.headerText, PALETTE.headerFill)).toBeGreaterThanOrEqual(4.5);
-    // The mixes a total can take: blue to green, yellow to orange, orange to red.
+    // The mixes a total can take: red to yellow, yellow to green, green to blue, blue to violet.
     for (const [from, to] of [
-      ['blue', 'green'],
-      ['yellow', 'orange'],
-      ['orange', 'red'],
+      ['red', 'yellow'],
+      ['yellow', 'green'],
+      ['green', 'blue'],
+      ['blue', 'violet'],
     ] as const) {
       for (const ratio of [0, 0.25, 0.5, 0.75, 1]) {
         const colour = mix(PALETTE.tones[from], PALETTE.tones[to], ratio);

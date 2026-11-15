@@ -86,10 +86,10 @@ describe('table', () => {
     expect(root.querySelector('.wt-footer__label')?.textContent).toBe('Suma czasu:');
     expect(root.querySelector('.wt-footer__value')?.textContent).toBe('10h 10m');
     const total = root.querySelector<HTMLElement>('.wt-footer__value') as HTMLElement;
-    expect(total.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-yellow)');
+    expect(total.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-green)');
     // The label has the colour of the value.
     const label = root.querySelector<HTMLElement>('.wt-footer__label') as HTMLElement;
-    expect(label.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-yellow)');
+    expect(label.style.getPropertyValue('--wt-total-from')).toBe('var(--wt-tone-green)');
     expect(label.getAttribute('data-tone')).toBe(total.getAttribute('data-tone'));
   });
 

@@ -31,7 +31,7 @@ for (const { scenario, total, fill } of cases) {
   });
 }
 
-test('the colour moves from blue-green towards red as the day gets longer', async ({ page }) => {
+test('the colour moves from yellow at 4h towards blue and violet as the day gets longer', async ({ page }) => {
   const colours: number[][] = [];
   for (const scenario of ['h4', 'h20']) {
     await openPanel(page, { scenario });
@@ -39,8 +39,9 @@ test('the colour moves from blue-green towards red as the day gets longer', asyn
     colours.push(await paintedColour(titleTotal(page)));
   }
   const [short = [], long = []] = colours;
-  // Four hours: more green and blue than red. Twenty hours: red dominates.
-  expect((short[1] ?? 0) + (short[2] ?? 0)).toBeGreaterThan((short[0] ?? 0) * 1.5);
-  expect(long[0] ?? 0).toBeGreaterThan(long[2] ?? 0);
-  expect(long[0] ?? 0).toBeGreaterThan(long[1] ?? 0);
+  // Four hours: yellow, much red and green, little blue. Twenty hours: blue dominates.
+  expect(short[0] ?? 0).toBeGreaterThan((short[2] ?? 0) * 2);
+  expect(short[1] ?? 0).toBeGreaterThan((short[2] ?? 0) * 2);
+  expect(long[2] ?? 0).toBeGreaterThan(long[0] ?? 0);
+  expect(long[2] ?? 0).toBeGreaterThan(long[1] ?? 0);
 });

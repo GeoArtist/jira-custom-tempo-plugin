@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Jira Custom Tempo",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Twój zalogowany czas pracy w Jira Cloud: wpisy na zgłoszenie, sumy i pasek normy dziennej.",
   "icons": {
     "16": "icons/icon-16.png",

@@ -1,6 +1,6 @@
 {
   "name": "jira-custom-tempo",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Browser extension showing your logged work time on Jira Cloud pages",
   "type": "module",

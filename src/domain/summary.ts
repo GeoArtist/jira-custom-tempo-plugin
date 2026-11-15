@@ -5,7 +5,7 @@ import { totalOf, type TicketRow } from './worklog';
 export const NORM_SECONDS = 8 * 3600;
 export const MAX_SECONDS = 24 * 3600;
 
-export type ProgressTone = 'blue' | 'green' | 'yellow' | 'orange' | 'red';
+export type ProgressTone = 'red' | 'yellow' | 'green' | 'blue' | 'violet';
 
 /**
  * A colour described as a mix of two named tones, so that the stylesheet (and the
@@ -30,14 +30,19 @@ export interface PeriodSummary {
   colour: ToneMix | null;
 }
 
-/** Light blue to light green up to the norm, then yellow through orange to red (FR-016, FR-017). */
+/**
+ * Red through yellow (at 4h) to green up to the norm, then green through blue (at 16h) to
+ * violet at 24h, and violet above (FR-016, FR-017). The stops match the progress bar's
+ * gradients, so a total has the colour of the bar at its value (FR-018).
+ */
 export function colourFor(totalSeconds: number): ToneMix | null {
   const r = totalSeconds / NORM_SECONDS;
   if (r <= 0) return null;
-  if (r <= 1) return { from: 'blue', to: 'green', ratio: r };
-  if (r <= 2) return { from: 'yellow', to: 'orange', ratio: r - 1 };
-  if (r <= 3) return { from: 'orange', to: 'red', ratio: r - 2 };
-  return { from: 'red', to: 'red', ratio: 1 };
+  if (r <= 0.5) return { from: 'red', to: 'yellow', ratio: r * 2 };
+  if (r <= 1) return { from: 'yellow', to: 'green', ratio: r * 2 - 1 };
+  if (r <= 2) return { from: 'green', to: 'blue', ratio: r - 1 };
+  if (r <= 3) return { from: 'blue', to: 'violet', ratio: r - 2 };
+  return { from: 'violet', to: 'violet', ratio: 1 };
 }
 
 export function summarise(rows: TicketRow[], period: Period): PeriodSummary {

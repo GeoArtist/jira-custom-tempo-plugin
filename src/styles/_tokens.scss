@@ -81,19 +81,19 @@
   --wt-switch-border: #4c4c50;
   --wt-switch-icon: #8a8a8f;
 
-  // Bar fills.
-  --wt-progress-blue: #6cc8ff;
-  --wt-progress-green: #4fd08f;
-  --wt-progress-yellow: #ffd24d;
-  --wt-progress-orange: #ff9f43;
+  // Bar fills: red, yellow, green up to the norm; green, blue, violet beyond (FR-016, FR-017).
   --wt-progress-red: #ff5d5d;
+  --wt-progress-yellow: #ffd24d;
+  --wt-progress-green: #4fd08f;
+  --wt-progress-blue: #4d9bff;
+  --wt-progress-violet: #a974ff;
 
   // The same meaning as text: tuned for contrast against the surface (FR-048).
-  --wt-tone-blue: #6cc8ff;
-  --wt-tone-green: #5fd39a;
-  --wt-tone-yellow: #ffd24d;
-  --wt-tone-orange: #ffa24a;
   --wt-tone-red: #ff8078;
+  --wt-tone-yellow: #ffd24d;
+  --wt-tone-green: #5fd39a;
+  --wt-tone-blue: #6cb0ff;
+  --wt-tone-violet: #c49bff;
 }
 
 .wt-root[data-theme='light'] {
@@ -120,15 +120,15 @@
   --wt-switch-border: #d8d6e0;
   --wt-switch-icon: #8f8f99;
 
-  --wt-progress-blue: #7dd3fc;
-  --wt-progress-green: #34c98a;
-  --wt-progress-yellow: #fbbf24;
-  --wt-progress-orange: #fb923c;
   --wt-progress-red: #ef4444;
+  --wt-progress-yellow: #fbbf24;
+  --wt-progress-green: #34c98a;
+  --wt-progress-blue: #3b82f6;
+  --wt-progress-violet: #8b5cf6;
 
-  --wt-tone-blue: #0a6199;
-  --wt-tone-green: #146c43;
-  --wt-tone-yellow: #7a5200;
-  --wt-tone-orange: #a34100;
   --wt-tone-red: #b3261e;
+  --wt-tone-yellow: #7a5200;
+  --wt-tone-green: #146c43;
+  --wt-tone-blue: #0b5cc0;
+  --wt-tone-violet: #6b35c4;
 }

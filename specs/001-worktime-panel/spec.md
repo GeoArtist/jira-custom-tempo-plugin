@@ -42,6 +42,8 @@
 
 **Amended by 004-reset-button-toolbar (2026-11-14)**: the header has two rows ([spec 004](../004-reset-button-toolbar/spec.md), FR-001 to FR-008, FR-024): the title with the two window buttons, minimise and close, and under it, 32 px lower than the usual gap, a toolbar with "Cofnij", "Ponów", "Odśwież", the new "Resetuj", and the settings. FR-086 is changed in one point: the minimise button stands directly before the close button, in the title row, no longer after the settings button. The total row of FR-014 carries the name of the plugin with its version at its left edge, the bottom left corner of the panel (004 FR-023), and the export control of 003 in its middle (004 FR-025). FR-066 is changed: the part with the bar or the chart has 16 px more room above and below (004 FR-024). "Resetuj" brings the open panel back to today for the signed-in user and forgets the steps of "Cofnij" and "Ponów", as the close button does (FR-049, FR-082; 004 FR-010, FR-011). The lowest height of the panel is 592 px in place of 440 px (FR-059, and the number in FR-075), because the header is one row higher and the toolbar and the bar have more room; a stored height from 440 px to 591 px is read as 592 px (004 FR-008).
 
+**Amendment 2026-11-15 (15)**: new colours of the progress bar, requested on 2026-11-15: up to the 8-hour norm the colour goes from red through yellow to green, and from 8 to 24 hours from green through shades of blue to violet, so a day short of the norm reads as a warning and overtime as a cool colour. The colour scale is now one continuous line without a jump at 8 hours; the totals, the launcher, the bars of the chart, and the total in the XLSX file follow it as before (User Story 2; FR-016, FR-017, FR-048).
+
 ## Inspiration Images
 
 The two mock-ups supplied with the request are stored with this spec. They show the intended look
@@ -110,8 +112,8 @@ and confirm the rows, entry times, row sums, title, and bottom total match what 
 ### User Story 2 - Daily norm progress at a glance (Priority: P2)
 
 The user sees a progress bar that shows the total logged time against the 8-hour daily norm, with
-room to show overtime up to 24 hours. The colour of the bar tells them where they stand: light
-blue towards light green while approaching 8 hours, then yellow through orange to red beyond
+room to show overtime up to 24 hours. The colour of the bar tells them where they stand: red through
+yellow to green while approaching 8 hours, then green through shades of blue to violet beyond
 8 hours. The total in the title and the total below the table use the same colour as the bar.
 
 **Why this priority**: It turns the numbers into an instant status signal, which is the main
@@ -123,15 +125,15 @@ colour of the bar and the colour of both totals in each case.
 **Acceptance Scenarios**:
 
 1. **Given** 4h 00m is logged today, **When** the plugin is open, **Then** the bar is filled to
-   the 4h position with a colour between light blue and light green, and both totals use that
-   same colour.
+   the 4h position, which is yellow (the bar runs from red through yellow), and both totals
+   are yellow.
 2. **Given** exactly 8h 00m is logged, **When** the plugin is open, **Then** the bar is filled to
-   the 8h mark and ends in light green.
+   the 8h mark and ends in green.
 3. **Given** 10h 10m is logged, **When** the plugin is open, **Then** the 0–8h part of the bar
-   keeps its blue-to-green fill, the part beyond 8h is filled in yellow, and both totals are
-   yellow.
+   keeps its red-to-green fill, the part beyond 8h is filled in green turning blue, and both
+   totals are a blue-green.
 4. **Given** 20h 00m is logged, **When** the plugin is open, **Then** the overtime part of the
-   bar runs from yellow through orange to red and both totals are red-toned.
+   bar runs from green through blue towards violet and both totals are blue-violet.
 
 ---
 
@@ -411,10 +413,11 @@ in settings, save, reopen Jira, and confirm it is still light and every element 
 
 - **FR-015**: The plugin MUST show a progress bar for the total logged time on a scale from 0 to
   24 hours, with the 8-hour daily norm clearly marked.
-- **FR-016**: From 0 to 8 hours the bar fill MUST change gradually from light blue to light
-  green.
-- **FR-017**: From 8 to 24 hours the additional fill MUST change gradually from yellow through
-  orange to red.
+- **FR-016**: From 0 to 8 hours the bar fill MUST change gradually from red through yellow
+  (at 4 hours) to green (at 8 hours). (Until Amendment 15: light blue to light green.)
+- **FR-017**: From 8 to 24 hours the additional fill MUST change gradually from green through
+  blue (at 16 hours) to violet (at 24 hours); above 24 hours the colour stays violet. (Until
+  Amendment 15: yellow through orange to red.)
 - **FR-018**: For a single-day period, the total in the title and the total below the table MUST
   use the same colour as the bar at the current value, and MUST change together with it.
 - **FR-019**: For a period longer than one day the progress bar MUST NOT be shown; the bar
@@ -668,8 +671,8 @@ in settings, save, reopen Jira, and confirm it is still light and every element 
 - **FR-050**: The plugin MUST NOT modify anything in Jira: it only reads. It MUST NOT ask the
   user for a password, a token, or a Jira address, and MUST NOT ask the browser for any
   permission beyond running on Jira pages.
-- **FR-048**: In both appearances the progress colours (light blue, light green, yellow, orange,
-  red) MUST keep their meaning, and all text, including the coloured totals, MUST remain clearly
+- **FR-048**: In both appearances the progress colours (red, yellow, green, blue, violet) MUST
+  keep their meaning, and all text, including the coloured totals, MUST remain clearly
   readable against its background.
 
 **Icon**
@@ -798,7 +801,7 @@ in settings, save, reopen Jira, and confirm it is still light and every element 
   osobno" holds up to 24 months; "jeżeli ktoś ustawiłby lata" is read as more than 24 months,
   so that two years still show their 24 months.
 - A month or a year has no norm of its own. Its bar is coloured by the average per working
-  day, which keeps blue to green for "up to 8 hours a day" and yellow to red for more.
+  day, which keeps red to green for "up to 8 hours a day" and green to violet for more.
 - Days without logged time have an empty place in the chart, and their tip says 0h 00m.
 - The chart is drawn with plain elements and styles; no chart library is added.
 - The chart is taller than the progress bar. Its height follows the panel's (64 px in the

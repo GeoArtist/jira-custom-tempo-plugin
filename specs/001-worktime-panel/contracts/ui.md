@@ -194,8 +194,8 @@ Single-day period (active):
 - Scale 0 to 24h; ticks at 0, 4, 8, 12, 16, 24 hours; the 8h tick is emphasised. As in the
   mock-up, the first 8 hours take 60% of the bar's width and the hours from 8 to 24 the
   remaining 40%.
-- Fill from 0 to 8h: light blue to light green. Fill beyond 8h: yellow through orange to red
-  (FR-016, FR-017).
+- Fill from 0 to 8h: red through yellow (4h) to green. Fill beyond 8h: green through blue
+  (16h) to violet (24h) (FR-016, FR-017).
 - Title total, total row value, and the launcher's total and dot use the colour from the data
   model's colour rule (FR-018).
 - The bar exposes `role="progressbar"` with its minimum, maximum, current value, the total as
@@ -243,9 +243,9 @@ of its value; without a progress colour the dot is muted.
 
 `--wt-bg`, `--wt-surface`, `--wt-surface-raised`, `--wt-border`, `--wt-text`, `--wt-text-muted`,
 `--wt-link`, `--wt-accent`, `--wt-on-accent`, `--wt-focus`, `--wt-danger`, `--wt-track`,
-`--wt-progress-blue`, `--wt-progress-green`, `--wt-progress-yellow`, `--wt-progress-orange`,
-`--wt-progress-red`, and `--wt-tone-blue`, `--wt-tone-green`, `--wt-tone-yellow`,
-`--wt-tone-orange`, `--wt-tone-red`, and for the theme switch `--wt-switch-track`,
+`--wt-progress-red`, `--wt-progress-yellow`, `--wt-progress-green`, `--wt-progress-blue`,
+`--wt-progress-violet`, and `--wt-tone-red`, `--wt-tone-yellow`, `--wt-tone-green`,
+`--wt-tone-blue`, `--wt-tone-violet`, and for the theme switch `--wt-switch-track`,
 `--wt-switch-border`, `--wt-switch-icon`. The knob of the switch uses `--wt-accent` and the
 icon on it `--wt-on-accent`.
 

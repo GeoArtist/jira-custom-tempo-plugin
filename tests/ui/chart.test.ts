@@ -63,9 +63,9 @@ describe('bar chart', () => {
     const { bars } = build();
     const colour = (index: number) =>
       ['from', 'to', 'pct'].map((name) => bars()[index]?.style.getPropertyValue(`--wt-bar-${name}`));
-    expect(colour(0)).toEqual(['var(--wt-progress-blue)', 'var(--wt-progress-green)', '100%']);
-    expect(colour(1)).toEqual(['var(--wt-progress-blue)', 'var(--wt-progress-green)', '50%']);
-    expect(colour(4)).toEqual(['var(--wt-progress-yellow)', 'var(--wt-progress-orange)', '50%']);
+    expect(colour(0)).toEqual(['var(--wt-progress-yellow)', 'var(--wt-progress-green)', '100%']);
+    expect(colour(1)).toEqual(['var(--wt-progress-red)', 'var(--wt-progress-yellow)', '100%']);
+    expect(colour(4)).toEqual(['var(--wt-progress-green)', 'var(--wt-progress-blue)', '50%']);
     expect(colour(2)).toEqual(['', '', '']);
   });
 

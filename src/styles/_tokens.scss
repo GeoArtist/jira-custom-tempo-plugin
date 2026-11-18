@@ -55,80 +55,50 @@
   --wt-hover: color-mix(in srgb, var(--wt-accent) 18%, var(--wt-surface));
 }
 
-// Dark is the default appearance (FR-045).
-.wt-root,
-.wt-root[data-theme='dark'] {
+// Colours of both themes, as light-dark(light, dark). The theme picks the side through
+// `color-scheme`: dark is the default appearance (FR-045), `data-theme='light'` switches.
+// No element inside sets its own `color-scheme`, so every token resolves to the theme.
+.wt-root {
   color-scheme: dark;
 
-  --wt-bg: #0f1218;
-  --wt-surface: #171b23;
-  --wt-surface-raised: #1f2530;
-  --wt-border: #2c3340;
-  --wt-text: #e6e9ef;
-  --wt-text-muted: #9aa3b2;
-  --wt-link: #7ab5ff;
-  --wt-accent: #2563eb;
-  --wt-person: #ff6c00; // the name of the person whose time is shown (002 FR-007)
-  --wt-scrim: rgb(0 0 0 / 55%); // the dimmed layer under the alert window
+  --wt-bg: light-dark(#f4f5f7, #0f1218);
+  --wt-surface: light-dark(#ffffff, #171b23);
+  --wt-surface-raised: light-dark(#f7f8fa, #1f2530);
+  --wt-border: light-dark(#dde1e8, #2c3340);
+  --wt-text: light-dark(#172033, #e6e9ef);
+  --wt-text-muted: light-dark(#5a6475, #9aa3b2);
+  --wt-link: light-dark(#0b5cd7, #7ab5ff);
+  --wt-accent: light-dark(#0c66e4, #2563eb);
+  // The name of the person whose time is shown (002 FR-007). The light one is the same
+  // orange, darker: #ff6c00 itself has too little contrast on a light surface.
+  --wt-person: light-dark(#b84e00, #ff6c00);
+  --wt-scrim: light-dark(rgb(23 32 51 / 35%), rgb(0 0 0 / 55%)); // the dimmed layer under the alert window
   --wt-on-accent: #ffffff;
-  --wt-focus: #8ab4ff;
-  --wt-danger: #ff8a80;
-  --wt-track: #2a303c;
-  --wt-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+  --wt-focus: light-dark(#0c66e4, #8ab4ff);
+  --wt-danger: light-dark(#b3261e, #ff8a80);
+  --wt-track: light-dark(#e9edf3, #2a303c);
+  --wt-shadow: 0 8px 24px light-dark(rgb(23 32 51 / 12%), rgb(0 0 0 / 35%));
 
   // Theme switch.
-  --wt-switch-track: #0b0b0b;
-  --wt-switch-border: #4c4c50;
-  --wt-switch-icon: #8a8a8f;
+  --wt-switch-track: light-dark(#ffffff, #0b0b0b);
+  --wt-switch-border: light-dark(#d8d6e0, #4c4c50);
+  --wt-switch-icon: light-dark(#8f8f99, #8a8a8f);
 
   // Bar fills: red, yellow, green up to the norm; green, blue, violet beyond (FR-016, FR-017).
-  --wt-progress-red: #ff5d5d;
-  --wt-progress-yellow: #ffd24d;
-  --wt-progress-green: #4fd08f;
-  --wt-progress-blue: #4d9bff;
-  --wt-progress-violet: #a974ff;
+  --wt-progress-red: light-dark(#ef4444, #ff5d5d);
+  --wt-progress-yellow: light-dark(#fbbf24, #ffd24d);
+  --wt-progress-green: light-dark(#34c98a, #4fd08f);
+  --wt-progress-blue: light-dark(#3b82f6, #4d9bff);
+  --wt-progress-violet: light-dark(#8b5cf6, #a974ff);
 
   // The same meaning as text: tuned for contrast against the surface (FR-048).
-  --wt-tone-red: #ff8078;
-  --wt-tone-yellow: #ffd24d;
-  --wt-tone-green: #5fd39a;
-  --wt-tone-blue: #6cb0ff;
-  --wt-tone-violet: #c49bff;
+  --wt-tone-red: light-dark(#b3261e, #ff8078);
+  --wt-tone-yellow: light-dark(#7a5200, #ffd24d);
+  --wt-tone-green: light-dark(#146c43, #5fd39a);
+  --wt-tone-blue: light-dark(#0b5cc0, #6cb0ff);
+  --wt-tone-violet: light-dark(#6b35c4, #c49bff);
 }
 
 .wt-root[data-theme='light'] {
   color-scheme: light;
-
-  --wt-bg: #f4f5f7;
-  --wt-surface: #ffffff;
-  --wt-surface-raised: #f7f8fa;
-  --wt-border: #dde1e8;
-  --wt-text: #172033;
-  --wt-text-muted: #5a6475;
-  --wt-link: #0b5cd7;
-  --wt-accent: #0c66e4;
-  // The same orange, darker: #ff6c00 itself has too little contrast on a light surface.
-  --wt-person: #b84e00;
-  --wt-scrim: rgb(23 32 51 / 35%);
-  --wt-on-accent: #ffffff;
-  --wt-focus: #0c66e4;
-  --wt-danger: #b3261e;
-  --wt-track: #e9edf3;
-  --wt-shadow: 0 8px 24px rgb(23 32 51 / 12%);
-
-  --wt-switch-track: #ffffff;
-  --wt-switch-border: #d8d6e0;
-  --wt-switch-icon: #8f8f99;
-
-  --wt-progress-red: #ef4444;
-  --wt-progress-yellow: #fbbf24;
-  --wt-progress-green: #34c98a;
-  --wt-progress-blue: #3b82f6;
-  --wt-progress-violet: #8b5cf6;
-
-  --wt-tone-red: #b3261e;
-  --wt-tone-yellow: #7a5200;
-  --wt-tone-green: #146c43;
-  --wt-tone-blue: #0b5cc0;
-  --wt-tone-violet: #6b35c4;
 }

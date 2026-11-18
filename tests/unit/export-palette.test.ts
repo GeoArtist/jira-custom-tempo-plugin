@@ -7,17 +7,20 @@ import type { PeriodSummary, ProgressTone } from '../../src/domain/summary';
 import { argb, mix, PALETTE, totalColour } from '../../src/export/palette';
 
 const tokens = readFileSync(resolve(__dirname, '..', '..', 'src', 'styles', '_tokens.scss'), 'utf8');
-const lightBlock = tokens.slice(tokens.indexOf(".wt-root[data-theme='light'] {"));
-const darkBlock = tokens.slice(
-  tokens.indexOf(".wt-root[data-theme='dark'] {"),
-  tokens.indexOf(".wt-root[data-theme='light'] {"),
-);
 
-/** The value of a custom property in a block of the token file. */
-function token(block: string, name: string): string {
-  const match = new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})\\s*;`).exec(block);
-  if (!match) throw new Error(`no token ${name}`);
-  return (match[1] as string).toLowerCase();
+type Appearance = 'light' | 'dark';
+
+/**
+ * The value of a colour token in one appearance: the matching side of
+ * `light-dark(light, dark)`, or the single value a token has in both.
+ */
+function token(appearance: Appearance, name: string): string {
+  const hex = '(#[0-9a-fA-F]{6})';
+  const pair = new RegExp(`${name}:\\s*light-dark\\(\\s*${hex}\\s*,\\s*${hex}\\s*\\)\\s*;`).exec(tokens);
+  if (pair) return ((appearance === 'light' ? pair[1] : pair[2]) as string).toLowerCase();
+  const single = new RegExp(`${name}:\\s*${hex}\\s*;`).exec(tokens);
+  if (!single) throw new Error(`no token ${name}`);
+  return (single[1] as string).toLowerCase();
 }
 
 function luminance(hex: string): number {
@@ -47,18 +50,18 @@ const TONES: ProgressTone[] = ['red', 'yellow', 'green', 'blue', 'violet'];
 
 describe('palette of the sheet', () => {
   it('equals the tokens of the light appearance', () => {
-    expect(PALETTE.text).toBe(token(lightBlock, '--wt-text'));
-    expect(PALETTE.muted).toBe(token(lightBlock, '--wt-text-muted'));
-    expect(PALETTE.link).toBe(token(lightBlock, '--wt-link'));
-    expect(PALETTE.name).toBe(token(lightBlock, '--wt-person'));
-    expect(PALETTE.headerFill).toBe(token(lightBlock, '--wt-accent'));
-    expect(PALETTE.headerText).toBe(token(lightBlock, '--wt-on-accent'));
-    for (const tone of TONES) expect(PALETTE.tones[tone]).toBe(token(lightBlock, `--wt-tone-${tone}`));
+    expect(PALETTE.text).toBe(token('light', '--wt-text'));
+    expect(PALETTE.muted).toBe(token('light', '--wt-text-muted'));
+    expect(PALETTE.link).toBe(token('light', '--wt-link'));
+    expect(PALETTE.name).toBe(token('light', '--wt-person'));
+    expect(PALETTE.headerFill).toBe(token('light', '--wt-accent'));
+    expect(PALETTE.headerText).toBe(token('light', '--wt-on-accent'));
+    for (const tone of TONES) expect(PALETTE.tones[tone]).toBe(token('light', `--wt-tone-${tone}`));
   });
 
   it('takes its border from the one value that is not a light token', () => {
     expect(PALETTE.border).toBe('#9aa3b2');
-    expect(PALETTE.border).toBe(token(darkBlock, '--wt-text-muted'));
+    expect(PALETTE.border).toBe(token('dark', '--wt-text-muted'));
   });
 
   it('mixes two colours channel by channel', () => {

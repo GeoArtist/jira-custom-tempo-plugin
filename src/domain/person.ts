@@ -84,7 +84,7 @@ export function matchPeople(candidates: readonly PersonCandidate[], text: string
   }
 
   // The same order every time, also for people who share a name.
-  const ordered = [...matching].sort(
+  const ordered = matching.toSorted(
     (a, b) => collator.compare(a.displayName, b.displayName) || (a.accountId < b.accountId ? -1 : 1),
   );
   return { kind: 'several', people: ordered.slice(0, MAX_CANDIDATES), more: ordered.length > MAX_CANDIDATES };

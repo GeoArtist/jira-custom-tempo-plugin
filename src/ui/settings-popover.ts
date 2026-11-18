@@ -441,6 +441,8 @@ export function createSettingsPopover(options: SettingsPopoverOptions): Settings
   name.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
+      // Enter that confirms an IME composition is not a save.
+      if (event.isComposing) return;
       save();
     }
   });

@@ -75,7 +75,7 @@ const COMPARATORS: Record<SortColumn, (a: TicketRow, b: TicketRow) => number> = 
 /** A sorted copy. Rows that compare equal keep the order they were loaded in (FR-009). */
 export function sortRows(rows: TicketRow[], column: SortColumn, direction: SortDirection): TicketRow[] {
   const sign = direction === 'ascending' ? 1 : -1;
-  return [...rows].sort((a, b) => sign * COMPARATORS[column](a, b));
+  return rows.toSorted((a, b) => sign * COMPARATORS[column](a, b));
 }
 
 /** Shown in place of the total while it is not known. */

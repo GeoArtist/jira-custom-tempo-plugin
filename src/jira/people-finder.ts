@@ -71,10 +71,7 @@ async function limited<T>(options: CheckOptions, run: (pool: RequestPool) => Pro
   // The race below may leave this promise behind; its late failure is of no interest.
   work.catch(() => {});
 
-  let stop: (reason: Error) => void = () => {};
-  const stopped = new Promise<never>((_, reject) => {
-    stop = reject;
-  });
+  const { promise: stopped, reject: stop } = Promise.withResolvers<never>();
   const timer = timers.setTimeout(() => stop(new CheckTimeoutError()), CHECK_TIMEOUT_MS);
   const onAbort = (): void => stop(new AbortedError());
   outer?.addEventListener('abort', onAbort);

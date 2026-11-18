@@ -37,8 +37,8 @@ export function append(parent: Node, children: Child[]): void {
   }
 }
 
-export function clear(node: Node): void {
-  while (node.firstChild) node.removeChild(node.firstChild);
+export function clear(node: ParentNode): void {
+  node.replaceChildren();
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
